@@ -105,13 +105,12 @@
         <div class="row">
           <div>
             <label>Part No.</label>
-            <input id="partNo" list="partNoList" placeholder="เช่น ABC-123" oninput="updatePartName()" />
+            <input id="partNo"$1oninput="updatePartName()" onchange="updatePartName()" />
             <datalist id="partNoList"></datalist>
           </div>
           <div>
             <label>Part Name</label>
-           <input id="partNo" list="partNoList" placeholder="เช่น ABC-123"
-       oninput="updatePartName()" onchange="updatePartName()" />
+            <input id="partName" readonly placeholder="จะเติมอัตโนมัติจาก Part No." />
           </div>
         </div>
 
@@ -153,31 +152,39 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbxxwyJud5K3d-L-XX--N4_zk1hA4mYDppE_6gjZ6NZs94Li3CpUrhBWG_MR7sIaQuCE/exec"; // TODO: ใส่ URL จาก GAS Deploy
+    const API_URL = "PASTE_YOUR_GAS_WEB_APP_URL_HERE"; // TODO: ใส่ URL จาก GAS Deploy
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
+    let PARTS = {};
     let PARTS_LC = {};
-function normalizeKey(s){ return (s||'').toString().trim().toLowerCase(); }
+    function normalizeKey(s){ return (s||'').toString().trim().toLowerCase(); }
 
-
-async function loadParts(){
-  try{
-    const resp = await fetch(API_URL + '?action=parts');
-    const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-    if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
-   PARTS = {};
-PARTS_LC = {};
-for(const p of (data.parts||[])){
-  if(p && p.partNo){
-    const no = String(p.partNo);
-    const name = String(p.partName||'');
-    PARTS[no] = name;
-    PARTS_LC[normalizeKey(no)] = name; // ✅ เก็บ lower-case สำหรับเทียบแบบไม่แคร์ตัวพิมพ์
-  }
-}
-    fillPartNoList(); // ✅ เติม datalist ที่นี่ แทนการเรียกตัวเอง
-  }catch(err){ console.warn('Load parts error:', err); }
-}
+    async function loadParts(){
+      try{
+        const resp = await fetch(API_URL + '?action=parts');
+        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
+        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
+        PARTS = {};
+        PARTS_LC = {};
+        for(const p of (data.parts||[])){
+          if(p && p.partNo){
+            const no = String(p.partNo);
+            const name = String(p.partName||'');
+            PARTS[no] = name;
+            PARTS_LC[normalizeKey(no)] = name;
+          }
+        }
+        fillPartNoList();
+      }catch(err){ console.warn('Load parts error:', err); }
+    }));
+        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
+        PARTS = {};
+        for(const p of (data.parts||[])){
+          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); }
+        }
+        await loadParts();
+      }catch(err){ console.warn('Load parts error:', err); }
+    }
 
     // เตรียม datalist ของ Part No.
     function fillPartNoList(){
@@ -221,13 +228,12 @@ for(const p of (data.parts||[])){
     }
 
     // ==== Part link ====
-   function updatePartName(){
-  const pnRaw = document.getElementById('partNo').value;
-  const pn = pnRaw.trim();
-  const name = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
-  document.getElementById('partName').value = name;
-}
-
+    function updatePartName(){
+      const pnRaw = document.getElementById('partNo').value;
+      const pn = pnRaw.trim();
+      const name = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
+      document.getElementById('partName').value = name;
+    }
 
     // ==== Lots table ====
     function lotRowTemplate(idx){
@@ -302,18 +308,18 @@ for(const p of (data.parts||[])){
 
     // ==== init ====
     (async function init(){
-      fillPartNoList();
-      clearLots();
+      // โหลดรายการ Part ก่อน
+      await loadParts();
       const u = localStorage.getItem('loggedUser');
       if(u){
         document.getElementById('employee').value = u;
         document.getElementById('loginBadge').textContent = `Logged in as: ${u}`;
         showScreen('screen-form');
+      } else {
+        // บังคับให้แสดงหน้า Login ชัดเจน หากยังไม่เคยล็อกอิน
+        showScreen('screen-login');
       }
     })();
   </script>
 </body>
 </html>
-
-
-
