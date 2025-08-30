@@ -152,13 +152,23 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbxyXFladUB9mIdq4R0Pnwsl6_m4A5_0uHOTlh_eiExZjCD7r4RpyKqyXuzDblVC2gk0/exec"; // TODO: ใส่ URL จาก GAS Deploy
+    const API_URL = "PASTE_YOUR_GAS_WEB_APP_URL_HERE"; // TODO: ใส่ URL จาก GAS Deploy
 
-    // Master data (MVP): สามารถแก้/เพิ่มตัวอย่างได้ — ภายหลังจะเปลี่ยนเป็นดึงจาก API
-    const PARTS = {
-      "ABC-123": "Front Panel Cover",
-      "XYZ-789": "Rear Bracket"
-    };
+    // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
+    let PARTS = {};
+
+    async function loadParts(){
+      try{
+        const resp = await fetch(API_URL + '?action=parts');
+        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
+        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
+        PARTS = {};
+        for(const p of (data.parts||[])){
+          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); }
+        }
+        await loadParts();
+      }catch(err){ console.warn('Load parts error:', err); }
+    }
 
     // เตรียม datalist ของ Part No.
     function fillPartNoList(){
@@ -280,7 +290,7 @@
     }
 
     // ==== init ====
-    (function init(){
+    (async function init(){
       fillPartNoList();
       clearLots();
       const u = localStorage.getItem('loggedUser');
