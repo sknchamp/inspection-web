@@ -110,7 +110,8 @@
           </div>
           <div>
             <label>Part Name</label>
-            <input id="partName" readonly placeholder="จะเติมอัตโนมัติจาก Part No." />
+           <input id="partNo" list="partNoList" placeholder="เช่น ABC-123"
+       oninput="updatePartName()" onchange="updatePartName()" />
           </div>
         </div>
 
@@ -155,20 +156,28 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbzTzPjZUciFgsPJ3bk7Btt6waolx0CBaklIA5lTC-gNelCFA_-6x0CzUPbzdqp8AMxH/exec"; // TODO: ใส่ URL จาก GAS Deploy
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
-    let PARTS = {};
+    let PARTS_LC = {};
+function normalizeKey(s){ return (s||'').toString().trim().toLowerCase(); }
 
-    async function loadParts(){
-      try{
-        const resp = await fetch(API_URL + '?action=parts');
-        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
-        PARTS = {};
-        for(const p of (data.parts||[])){
-          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); }
-        }
-        await loadParts();
-      }catch(err){ console.warn('Load parts error:', err); }
-    }
+
+async function loadParts(){
+  try{
+    const resp = await fetch(API_URL + '?action=parts');
+    const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
+    if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
+   PARTS = {};
+PARTS_LC = {};
+for(const p of (data.parts||[])){
+  if(p && p.partNo){
+    const no = String(p.partNo);
+    const name = String(p.partName||'');
+    PARTS[no] = name;
+    PARTS_LC[normalizeKey(no)] = name; // ✅ เก็บ lower-case สำหรับเทียบแบบไม่แคร์ตัวพิมพ์
+  }
+}
+    fillPartNoList(); // ✅ เติม datalist ที่นี่ แทนการเรียกตัวเอง
+  }catch(err){ console.warn('Load parts error:', err); }
+}
 
     // เตรียม datalist ของ Part No.
     function fillPartNoList(){
@@ -212,11 +221,13 @@
     }
 
     // ==== Part link ====
-    function updatePartName(){
-      const pn = document.getElementById('partNo').value.trim();
-      const name = PARTS[pn] || '';
-      document.getElementById('partName').value = name;
-    }
+   function updatePartName(){
+  const pnRaw = document.getElementById('partNo').value;
+  const pn = pnRaw.trim();
+  const name = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
+  document.getElementById('partName').value = name;
+}
+
 
     // ==== Lots table ====
     function lotRowTemplate(idx){
@@ -303,4 +314,5 @@
   </script>
 </body>
 </html>
+
 
