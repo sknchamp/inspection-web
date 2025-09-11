@@ -207,13 +207,15 @@
   </div>
 
   <script>
+    // ---------- Helpers ----------
     const API_URL = "https://script.google.com/macros/s/AKfycbxzJ9aO_GNv1Y6hJJ2NipqWw6QTmbA0vsBPKg3RWBRaFETcDzLbpmuluqIxEyVIGm9n/exec"; // ลงท้าย /exec
+    const el = (id) => document.getElementById(id);
 
     let PARTS = {};
     let PARTS_LC = {};
     const normalizeKey = s => (s||'').toString().trim().toLowerCase();
 
-    // ===== Date helpers: d-M-yy =====
+    // Date helpers: d-M-yy
     function parseYMD(s){
       if(!s) return null;
       if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
@@ -228,11 +230,19 @@
       return `${dd}-${mm}-${yy}`;
     }
 
-    // cache-buster helper
+    // cache-buster
     const bust = () => `_=${Date.now()}`;
     const withBust = url => url + (url.includes('?') ? '&' : '?') + bust();
 
-    // Load PART list
+    // ---------- Views / Modal ----------
+    function showScreen(id){
+      document.querySelectorAll('.screen').forEach(elm=>elm.classList.remove('active'));
+      el(id).classList.add('active');
+    }
+    function showModal(t,b){ el('modalTitle').textContent=t; el('modalBody').textContent=b; el('overlay').classList.add('show'); }
+    function closeModal(){ el('overlay').classList.remove('show'); }
+
+    // ---------- Load PART list ----------
     async function loadParts(){
       try{
         const resp = await fetch(withBust(API_URL + '?action=parts'));
@@ -240,59 +250,57 @@
         if(!data.ok) return;
         PARTS = {}; PARTS_LC = {};
         (data.parts||[]).forEach(p=>{
-          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); PARTS_LC[normalizeKey(p.partNo)] = String(p.partName||''); }
+          if(p && p.partNo){
+            PARTS[String(p.partNo)] = String(p.partName||'');
+            PARTS_LC[normalizeKey(p.partNo)] = String(p.partName||'');
+          }
         });
-        const dl = document.getElementById('partNoList'); dl.innerHTML='';
+        const dl = el('partNoList'); dl.innerHTML='';
         Object.keys(PARTS).forEach(k=>{ const opt=document.createElement('option'); opt.value=k; dl.appendChild(opt); });
-      }catch(e){}
+      }catch(e){ console.warn(e); }
     }
 
-    // Views / Modal
-    function showScreen(id){ document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-    function showModal(t,b){ modalTitle.textContent=t; modalBody.textContent=b; overlay.classList.add('show'); }
-    function closeModal(){ overlay.classList.remove('show'); }
-
-    // History/Dashboard open & reset
-    function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded=true; } }
-    function resetHistoryFilters(){ hStart.value=''; hEnd.value=''; hPartNo.value=''; hEmployee.value=''; }
-    function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded=true; } }
-    function resetDashboardFilters(){ dStart.value=''; dEnd.value=''; dPartNo.value=''; dEmployee.value=''; }
-
-    // Login
+    // ---------- Login ----------
     function onLogin(){
-      const u = document.getElementById('login-username').value.trim();
+      const u = el('login-username').value.trim();
       if(!u) return showModal('Login failed','กรุณากรอก Username');
       localStorage.setItem('loggedUser', u);
-      employee.value = u; loginBadge.textContent = `Logged in as: ${u}`;
+      el('employee').value = u;
+      el('loginBadge').textContent = `Logged in as: ${u}`;
       showScreen('screen-form');
     }
-    function onLogout(){ localStorage.removeItem('loggedUser'); login-username.value=''; login-password.value=''; showScreen('screen-login'); }
-
-    // Part link
-    function updatePartName(){
-      const pn = partNo.value.trim();
-      partName.value = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
+    function onLogout(){
+      localStorage.removeItem('loggedUser');
+      el('login-username').value='';
+      el('login-password').value='';
+      showScreen('screen-login');
     }
 
-    // Lots
+    // ---------- Form: Part link ----------
+    function updatePartName(){
+      const pn = el('partNo').value.trim();
+      el('partName').value = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
+    }
+
+    // ---------- Lots ----------
     function lotRowTemplate(i){ return `<div class="lot-row" data-index="${i}">
       <input placeholder="Lot No." class="lot-no" />
       <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
       <div class="lot-actions"><button class="btn btn-danger" onclick="removeLotRow(${i})">Remove</button></div>
     </div>`;}
     let lotIndex=0;
-    function addLotRow(){ const div=document.createElement('div'); div.innerHTML=lotRowTemplate(++lotIndex); lotTable.appendChild(div.firstElementChild); }
+    function addLotRow(){ const div=document.createElement('div'); div.innerHTML=lotRowTemplate(++lotIndex); el('lotTable').appendChild(div.firstElementChild); }
     function removeLotRow(i){ const row=document.querySelector(`.lot-row[data-index="${i}"]`); if(row) row.remove(); }
-    function clearLots(){ lotTable.innerHTML=''; lotIndex=0; addLotRow(); }
+    function clearLots(){ el('lotTable').innerHTML=''; lotIndex=0; addLotRow(); }
 
-    // Save
+    // ---------- Save ----------
     async function onSave(){
       try{
-        const employeeName = employee.value.trim();
-        const pn = partNo.value.trim();
-        const pnName = partName.value.trim();
-        const shiftVal = shift.value;
-        const noteVal = note.value.trim();
+        const employeeName = el('employee').value.trim();
+        const pn = el('partNo').value.trim();
+        const pnName = el('partName').value.trim();
+        const shiftVal = el('shift').value;
+        const noteVal = el('note').value.trim();
         const userId = employeeName ? employeeName.toLowerCase().replace(/\s+/g,'') : '';
 
         const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
@@ -309,17 +317,17 @@
         if(!data.ok) return showModal('Save failed', data.error||'Unknown error');
 
         showModal('Saved successfully!','ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
-        partNo.value=''; partName.value=''; note.value=''; clearLots();
+        el('partNo').value=''; el('partName').value=''; el('note').value=''; clearLots();
       }catch(err){ showModal('Save failed', String(err)); }
     }
 
-    // Helpers
+    // ---------- Common helpers ----------
     function buildQuery(p){ const u=new URLSearchParams(); Object.entries(p).forEach(([k,v])=>{ if(v!=null && v!=='') u.set(k,v); }); return u.toString(); }
     function numberFmt(n){ return (n==null||n==='') ? '-' : new Intl.NumberFormat().format(n); }
 
-    // HISTORY (render as short date)
+    // ---------- History ----------
     function renderHistoryTable(rows){
-      const host = historyTable;
+      const host = el('historyTable');
       if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
       let html = '<table style="width:100%"><thead><tr style="text-align:left">'
         + '<th style="padding:10px">Date</th>'
@@ -348,18 +356,19 @@
       host.innerHTML = html;
     }
     async function loadHistory(){
-      const p = { action:'history', start:hStart.value, end:hEnd.value, partNo:hPartNo.value.trim(), employee:hEmployee.value.trim(), limit:2000 };
+      const p = { action:'history', start:el('hStart').value, end:el('hEnd').value, partNo:el('hPartNo').value.trim(), employee:el('hEmployee').value.trim(), limit:2000 };
       try{
         const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ historyMeta.textContent='Error'; return showModal('Load failed', data.error||'Unknown error'); }
-        historyMeta.textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
+        if(!data.ok){ el('historyMeta').textContent='Error'; return showModal('Load failed', data.error||'Unknown error'); }
+        el('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
         renderHistoryTable(data.rows);
         loadHistory._lastRows = data.rows || [];
       }catch(err){ showModal('Load failed', String(err)); }
     }
+    function resetHistoryFilters(){ el('hStart').value=''; el('hEnd').value=''; el('hPartNo').value=''; el('hEmployee').value=''; }
 
-    // CSV (UPDATED: คอลัมน์แรกเป็น Date แบบ d-M-yy)
+    // CSV (Date = d-M-yy)
     function toCSVShortDate(rows){
       if(!rows || rows.length===0) return '';
       const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
@@ -367,35 +376,26 @@
       const lines=[headers.join(',')];
       for(const r of rows){
         const dateShort = fmtShortDMY(r.Timestamp) || String(r.Timestamp||'');
-        const row = [
-          dateShort,
-          r.Employee,
-          r['Part No.'],
-          r['Part Name'],
-          r['Lot No.'],
-          r.Quantity,
-          r.Shift,
-          r.Note
-        ];
+        const row = [dateShort, r.Employee, r['Part No.'], r['Part Name'], r['Lot No.'], r.Quantity, r.Shift, r.Note];
         lines.push(row.map(esc).join(','));
       }
-      return '\uFEFF' + lines.join('\r\n'); // BOM for Thai in Excel
+      return '\uFEFF' + lines.join('\r\n');
     }
     async function exportHistoryCSV(){
       if(!loadHistory._lastRows){ await loadHistory(); }
       const rows=loadHistory._lastRows||[];
       if(rows.length===0) return showModal('Export CSV','ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)');
-      const start = hStart.value ? fmtShortDMY(hStart.value) : 'all';
-      const end   = hEnd.value ? fmtShortDMY(hEnd.value) : 'all';
+      const start = el('hStart').value ? fmtShortDMY(el('hStart').value) : 'all';
+      const end   = el('hEnd').value ? fmtShortDMY(el('hEnd').value) : 'all';
       const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
       setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
     }
 
-    // Dashboard tables & charts
+    // ---------- Dashboard ----------
     function renderTable(containerId, title, rows, cols){
-      const host=document.getElementById(containerId);
+      const host=el(containerId);
       if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
       let html=`<div class="muted" style="padding:8px 12px">${title}</div><table style="width:100%"><thead><tr style="text-align:left">`;
       cols.forEach(c=>html+=`<th style="padding:10px">${c}</th>`); html+='</tr></thead><tbody>';
@@ -403,7 +403,7 @@
       html+='</tbody></table>'; host.innerHTML=html;
     }
     function renderBarChart(canvasId, labels, values){
-      const canvas=document.getElementById(canvasId), ctx=canvas.getContext('2d');
+      const canvas=el(canvasId), ctx=canvas.getContext('2d');
       ctx.clearRect(0,0,canvas.width,canvas.height);
       if(!labels || labels.length===0){ ctx.fillText('No data',10,20); return; }
       const m={l:60,r:10,t:10,b:80}, W=canvas.width-m.l-m.r, H=canvas.height-m.t-m.b;
@@ -418,16 +418,16 @@
       ctx.restore();
     }
     async function loadDashboard(){
-      const p={ action:'dashboard', start:dStart.value, end:dEnd.value, partNo:dPartNo.value.trim(), employee:dEmployee.value.trim() };
+      const p={ action:'dashboard', start:el('dStart').value, end:el('dEnd').value, partNo:el('dPartNo').value.trim(), employee:el('dEmployee').value.trim() };
       try{
         const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ dashMeta.textContent='Error'; return showModal('Dashboard error', data.error||'Unknown'); }
+        if(!data.ok){ el('dashMeta').textContent='Error'; return showModal('Dashboard error', data.error||'Unknown'); }
 
-        kpiRecords.textContent=numberFmt(data.totals.records);
-        kpiQty.textContent=numberFmt(data.totals.totalQty);
-        kpiParts.textContent=numberFmt(data.totals.uniqueParts);
-        kpiEmployees.textContent=numberFmt(data.totals.employees);
+        el('kpiRecords').textContent=numberFmt(data.totals.records);
+        el('kpiQty').textContent=numberFmt(data.totals.totalQty);
+        el('kpiParts').textContent=numberFmt(data.totals.uniqueParts);
+        el('kpiEmployees').textContent=numberFmt(data.totals.employees);
 
         renderTable('tblByPart','By Part',data.byPart,['Part No.','Part Name','Records','Qty']);
         renderTable('tblByEmployee','By Employee',data.byEmployee,['Employee','Records','Qty']);
@@ -442,15 +442,19 @@
         renderBarChart('lotChart', topLots.map(x=>String(x['Lot No.']||'')), topLots.map(x=>x.Qty));
         renderTable('tblByLot','By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
 
-        const rangeText = (dStart.value||dEnd.value) ? `${dStart.value?fmtShortDMY(dStart.value):'...'} → ${dEnd.value?fmtShortDMY(dEnd.value):'...'}` : 'All time';
-        dashMeta.textContent = `Range: ${rangeText} | Records: ${numberFmt(data.totals.records)}`;
+        const rangeText = (el('dStart').value||el('dEnd').value) ? `${el('dStart').value?fmtShortDMY(el('dStart').value):'...'} → ${el('dEnd').value?fmtShortDMY(el('dEnd').value):'...'}` : 'All time';
+        el('dashMeta').textContent = `Range: ${rangeText} | Records: ${numberFmt(data.totals.records)}`;
       }catch(err){ showModal('Dashboard error', String(err)); }
     }
+    function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded=true; } }
+    function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded=true; } }
+    function resetDashboardFilters(){ el('dStart').value=''; el('dEnd').value=''; el('dPartNo').value=''; el('dEmployee').value=''; }
 
+    // ---------- init ----------
     (async function init(){
       await loadParts();
       const u=localStorage.getItem('loggedUser');
-      if(u){ employee.value=u; loginBadge.textContent=`Logged in as: ${u}`; showScreen('screen-form'); }
+      if(u){ el('employee').value=u; el('loginBadge').textContent=`Logged in as: ${u}`; showScreen('screen-form'); }
       else { showScreen('screen-login'); }
       clearLots();
     })();
