@@ -64,6 +64,14 @@
         <p>Minimal Viable Frontend — GitHub Pages</p>
       </header>
 
+      <!-- Top Nav -->
+      <div class="section" style="padding-top:8px;padding-bottom:0">
+        <div class="toolbar" style="justify-content:flex-start;gap:8px">
+          <button class="btn btn-ghost" onclick="showScreen('screen-form')">➕ New Entry</button>
+          <button class="btn btn-ghost" onclick="openHistory()">📜 History / Search</button>
+        </div>
+      </div>
+
       <!-- LOGIN SCREEN -->
       <section id="screen-login" class="section screen active">
         <div class="login-hero">
@@ -143,6 +151,45 @@
         </div>
       </section>
 
+      <!-- HISTORY SCREEN -->
+      <section id="screen-history" class="section screen">
+        <div class="row">
+          <div>
+            <label>Start date</label>
+            <input type="date" id="hStart" />
+          </div>
+          <div>
+            <label>End date</label>
+            <input type="date" id="hEnd" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Part No. (filter)</label>
+            <input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" />
+          </div>
+          <div>
+            <label>Employee (filter)</label>
+            <input id="hEmployee" placeholder="เช่น Champ" />
+          </div>
+        </div>
+        <div class="toolbar" style="justify-content:space-between">
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="resetHistoryFilters()">Reset</button>
+            <button class="btn btn-primary" onclick="loadHistory()">Search</button>
+          </div>
+          <div>
+            <span class="muted" id="historyMeta"></span>
+          </div>
+        </div>
+        <div style="margin-top:14px">
+          <div id="historyTable" style="overflow:auto;border:1px solid #e5e7eb;border-radius:12px"></div>
+        </div>
+        <div class="toolbar" style="justify-content:flex-end">
+          <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
+        </div>
+      </section>
+
     </div>
   </div>
 
@@ -159,7 +206,7 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbxqwiy_0ZdfpEa9eq-crcun8UQqRUAbfUByeAuoqk6pjLUbPtUe6WGzqx6EFiql0CV9/exec"; // TODO: ใส่ URL จาก GAS Deploy
+    const API_URL = "https://script.google.com/macros/s/AKfycbzk_Yuq9MFXkCTjAgVcRbw6rIAZ7K32ZtBvld1pCJP6Y73vn2TEccY7IBfd2g4lShqG/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
     let PARTS = {};
@@ -209,6 +256,18 @@
     }
     function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
 
+    // History helpers
+    function openHistory(){
+      showScreen('screen-history');
+      if(!openHistory._loaded){ loadHistory(); openHistory._loaded = true; }
+    }
+    function resetHistoryFilters(){
+      document.getElementById('hStart').value = '';
+      document.getElementById('hEnd').value = '';
+      document.getElementById('hPartNo').value = '';
+      document.getElementById('hEmployee').value = '';
+    }
+
     // ==== Login (MVP stub) ====
     function onLogin(){
       const u = document.getElementById('login-username').value.trim();
@@ -221,7 +280,6 @@
     }
     function onLogout(){
       localStorage.removeItem('loggedUser');
-      // reset
       document.getElementById('login-username').value = '';
       document.getElementById('login-password').value = '';
       showScreen('screen-login');
@@ -271,9 +329,8 @@
         const partName = document.getElementById('partName').value.trim();
         const shift    = document.getElementById('shift').value;
         const note     = document.getElementById('note').value.trim();
-        const userId   = employee ? (employee.toLowerCase().replace(/\s+/g,'') ) : '';
+        const userId   = employee ? (employee.toLowerCase().replace(/\s+/g,'')) : '';
 
-        // collect lots
         const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
           lotNo: r.querySelector('.lot-no').value.trim(),
           quantity: Number(r.querySelector('.lot-qty').value || '0')
@@ -291,7 +348,6 @@
 
         const payload = { employee, userId, partNo, partName, shift, note, lots };
 
-        // สำคัญ: ไม่ตั้ง headers เพื่อหลีกเลี่ยง preflight CORS
         const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON response'}));
 
@@ -299,9 +355,7 @@
           return showModal('Save failed', data.error || 'Unknown error');
         }
 
-        // success
         showModal('Saved successfully!', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
-        // ตามสเปค: เคลียร์ฟอร์มทั้งหมดหลัง Save
         document.getElementById('partNo').value = '';
         document.getElementById('partName').value = '';
         document.getElementById('note').value = '';
@@ -312,21 +366,78 @@
       }
     }
 
+    // ==== History ====
+    function buildQuery(params){
+      const usp = new URLSearchParams();
+      Object.entries(params).forEach(([k,v])=>{ if(v!=null && v!=='') usp.set(k,v); });
+      return usp.toString();
+    }
+    function renderHistoryTable(rows){
+      const host = document.getElementById('historyTable');
+      if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
+      let html = '<table style="width:100%">';
+      html += '<thead><tr style="text-align:left">'
+            + '<th style="padding:10px">Timestamp</th>'
+            + '<th style="padding:10px">Employee</th>'
+            + '<th style="padding:10px">Part No.</th>'
+            + '<th style="padding:10px">Part Name</th>'
+            + '<th style="padding:10px">Lot No.</th>'
+            + '<th style="padding:10px;text-align:right">Qty</th>'
+            + '<th style="padding:10px">Shift</th>'
+            + '<th style="padding:10px">Note</th>'
+            + '</tr></thead><tbody>';
+      for(const r of rows){
+        html += '<tr>'
+          + `<td style="padding:8px;white-space:nowrap">${r.Timestamp || ''}</td>`
+          + `<td style="padding:8px">${r.Employee || ''}</td>`
+          + `<td style="padding:8px">${r['Part No.'] || ''}</td>`
+          + `<td style="padding:8px">${r['Part Name'] || ''}</td>`
+          + `<td style="padding:8px">${r['Lot No.'] || ''}</td>`
+          + `<td style="padding:8px;text-align:right">${r.Quantity ?? ''}</td>`
+          + `<td style="padding:8px">${r.Shift || ''}</td>`
+          + `<td style="padding:8px">${r.Note || ''}</td>`
+          + '</tr>';
+      }
+      html += '</tbody></table>';
+      host.innerHTML = html;
+    }
+    async function loadHistory(){
+      const p = {
+        action: 'history',
+        start: document.getElementById('hStart').value,
+        end: document.getElementById('hEnd').value,
+        partNo: document.getElementById('hPartNo').value.trim(),
+        employee: document.getElementById('hEmployee').value.trim(),
+        limit: 200
+      };
+      const url = API_URL + '?' + buildQuery(p);
+      try{
+        const resp = await fetch(url);
+        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
+        if(!data.ok){
+          document.getElementById('historyMeta').textContent = 'Error';
+          return showModal('Load failed', data.error || 'Unknown error');
+        }
+        document.getElementById('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
+        renderHistoryTable(data.rows);
+      }catch(err){
+        showModal('Load failed', String(err));
+      }
+    }
+
     // ==== init ====
     (async function init(){
-      // โหลดรายการ Part ก่อน
-      await loadParts();
+      await loadParts(); // โหลด part_list ก่อน
       const u = localStorage.getItem('loggedUser');
       if(u){
         document.getElementById('employee').value = u;
         document.getElementById('loginBadge').textContent = `Logged in as: ${u}`;
         showScreen('screen-form');
       } else {
-        // บังคับให้แสดงหน้า Login ชัดเจน หากยังไม่เคยล็อกอิน
         showScreen('screen-login');
       }
+      clearLots(); // เตรียม 1 แถว lot เริ่มต้น
     })();
   </script>
 </body>
 </html>
-
