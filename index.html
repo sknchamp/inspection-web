@@ -13,7 +13,6 @@
     header{padding:28px 28px 18px;background:transparent;color:#e3f2fd;text-align:center}
     header h1{margin:0;font-weight:700;font-size:clamp(20px,3.6vw,28px)}
     header p{margin:.35rem 0 0;color:#cfe8ff}
-
     .section{padding:20px clamp(16px,4vw,28px) 26px}
     .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .row-1{grid-template-columns:1fr}
@@ -22,40 +21,29 @@
     input,select,textarea{width:100%;padding:12px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;outline:none;transition:border .15s,box-shadow .15s}
     input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(30,136,229,.15)}
     .muted{color:var(--muted);font-size:12px}
-
     .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer;transition:transform .06s ease,filter .15s}
     .btn:active{transform:translateY(1px)}
     .btn-primary{background:var(--accent);color:white}
     .btn-primary:hover{filter:brightness(1.05)}
     .btn-ghost{background:transparent;color:var(--accent);border:1px dashed var(--accent)}
     .btn-danger{background:var(--danger);color:#fff}
-
     .toolbar{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px}
     .badge{background:#e8f2ff;color:#0b3a72;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600}
-
     table{width:100%;border-collapse:separate;border-spacing:0 10px}
     th,td{padding:0}
     .lot-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:center}
     .lot-actions{display:flex;gap:8px;justify-content:flex-end}
-
-    /* Views */
     .screen{display:none}
     .screen.active{display:block}
-
-    /* Modal */
     .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
     .overlay.show{display:flex}
     .modal{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 10px 35px rgba(0,0,0,.35);padding:22px}
     .modal h3{margin:0 0 6px}
     .modal p{margin:0 0 16px;color:#374151}
     .modal .actions{display:flex;justify-content:flex-end;gap:10px}
-
-    /* Login */
     .login-hero{padding:28px;text-align:center;color:white}
     .login-hero h2{margin:0 0 6px;font-size:clamp(22px,6vw,30px)}
     .login-hero p{margin:0;color:#cfe8ff}
-
-    /* Dashboard */
     .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
     .kpi .cardk{background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px}
     .kpi .title{font-size:12px;color:#64748b}
@@ -82,72 +70,49 @@
         </div>
       </div>
 
-      <!-- LOGIN SCREEN -->
+      <!-- LOGIN -->
       <section id="screen-login" class="section screen active">
         <div class="login-hero">
           <h2>🔑 Login</h2>
           <p>เข้าสู่ระบบเพื่อเริ่มบันทึกผลการตรวจ</p>
         </div>
         <div class="row">
-          <div>
-            <label>Username</label>
-            <input id="login-username" placeholder="เช่น champ" />
-          </div>
-          <div>
-            <label>Password</label>
-            <input id="login-password" type="password" placeholder="••••••" />
-          </div>
+          <div><label>Username</label><input id="login-username" placeholder="เช่น champ" /></div>
+          <div><label>Password</label><input id="login-password" type="password" placeholder="••••••" /></div>
         </div>
-        <div class="toolbar">
-          <button class="btn btn-primary" onclick="onLogin()">Login</button>
-        </div>
-        <div class="section" style="padding-top:8px">
-          <span class="muted">* เวอร์ชัน MVP: ล็อกอินท้องถิ่นไว้ก่อน (เก็บชื่อผู้ใช้)</span>
-        </div>
+        <div class="toolbar"><button class="btn btn-primary" onclick="onLogin()">Login</button></div>
+        <div class="section" style="padding-top:8px"><span class="muted">* MVP: เก็บชื่อผู้ใช้ในเครื่อง</span></div>
       </section>
 
-      <!-- FORM SCREEN -->
+      <!-- FORM -->
       <section id="screen-form" class="section screen">
         <div class="row">
-          <div><label>Employee</label>
-            <input id="employee" readonly />
-          </div>
+          <div><label>Employee</label><input id="employee" readonly /></div>
           <div><label>Shift</label>
-            <select id="shift">
-              <option value="A">A</option>
-              <option value="B">B</option>
-            </select>
+            <select id="shift"><option value="A">A</option><option value="B">B</option></select>
           </div>
         </div>
 
         <div class="row">
           <div>
             <label>Part No.</label>
-            <input id="partNo" list="partNoList" placeholder="เช่น ABC-123"
-                   oninput="updatePartName()" onchange="updatePartName()" />
+            <input id="partNo" list="partNoList" placeholder="เช่น ABC-123" oninput="updatePartName()" onchange="updatePartName()" />
             <datalist id="partNoList"></datalist>
           </div>
           <div>
             <label>Part Name</label>
-            <input id="partName" readonly tabindex="-1" onfocus="this.blur()" inputmode="none"
-                   placeholder="จะเติมอัตโนมัติจาก Part No."
-                   style="background:#f8fafc; cursor:not-allowed;" />
+            <input id="partName" readonly tabindex="-1" onfocus="this.blur()" inputmode="none" placeholder="จะเติมอัตโนมัติจาก Part No." style="background:#f8fafc;cursor:not-allowed" />
           </div>
         </div>
 
         <div style="margin-top:8px">
           <label>Lots & Quantity</label>
           <div id="lotTable"></div>
-          <div class="toolbar">
-            <button class="btn btn-ghost" onclick="addLotRow()">+ Add Lot</button>
-          </div>
+          <div class="toolbar"><button class="btn btn-ghost" onclick="addLotRow()">+ Add Lot</button></div>
         </div>
 
         <div class="row row-1">
-          <div>
-            <label>Note</label>
-            <textarea id="note" rows="3" placeholder="เช่น OK / NG / Remark"></textarea>
-          </div>
+          <div><label>Note</label><textarea id="note" rows="3" placeholder="เช่น OK / NG / Remark"></textarea></div>
         </div>
 
         <div class="toolbar">
@@ -157,27 +122,15 @@
         </div>
       </section>
 
-      <!-- HISTORY SCREEN -->
+      <!-- HISTORY -->
       <section id="screen-history" class="section screen">
         <div class="row">
-          <div>
-            <label>Start date</label>
-            <input type="date" id="hStart" />
-          </div>
-          <div>
-            <label>End date</label>
-            <input type="date" id="hEnd" />
-          </div>
+          <div><label>Start date</label><input type="date" id="hStart" /></div>
+          <div><label>End date</label><input type="date" id="hEnd" /></div>
         </div>
         <div class="row">
-          <div>
-            <label>Part No. (filter)</label>
-            <input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" />
-          </div>
-          <div>
-            <label>Employee (filter)</label>
-            <input id="hEmployee" placeholder="เช่น Champ" />
-          </div>
+          <div><label>Part No. (filter)</label><input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
+          <div><label>Employee (filter)</label><input id="hEmployee" placeholder="เช่น Champ" /></div>
         </div>
         <div class="toolbar" style="justify-content:space-between">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -185,39 +138,21 @@
             <button class="btn btn-primary" onclick="loadHistory()">Search</button>
             <button class="btn btn-ghost" onclick="exportHistoryCSV()">Export CSV</button>
           </div>
-          <div>
-            <span class="muted" id="historyMeta"></span>
-          </div>
+          <div><span class="muted" id="historyMeta"></span></div>
         </div>
-        <div style="margin-top:14px">
-          <div id="historyTable" class="table-wrap"></div>
-        </div>
-        <div class="toolbar" style="justify-content:flex-end">
-          <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
-        </div>
+        <div style="margin-top:14px"><div id="historyTable" class="table-wrap"></div></div>
+        <div class="toolbar" style="justify-content:flex-end"><button class="btn" onclick="showScreen('screen-form')">Back to Form</button></div>
       </section>
 
-      <!-- DASHBOARD SCREEN -->
+      <!-- DASHBOARD -->
       <section id="screen-dashboard" class="section screen">
         <div class="row">
-          <div>
-            <label>Start date</label>
-            <input type="date" id="dStart" />
-          </div>
-          <div>
-            <label>End date</label>
-            <input type="date" id="dEnd" />
-          </div>
+          <div><label>Start date</label><input type="date" id="dStart" /></div>
+          <div><label>End date</label><input type="date" id="dEnd" /></div>
         </div>
         <div class="row">
-          <div>
-            <label>Part No. (filter)</label>
-            <input id="dPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" />
-          </div>
-          <div>
-            <label>Employee (filter)</label>
-            <input id="dEmployee" placeholder="เช่น Champ" />
-          </div>
+          <div><label>Part No. (filter)</label><input id="dPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
+          <div><label>Employee (filter)</label><input id="dEmployee" placeholder="เช่น Champ" /></div>
         </div>
         <div class="toolbar" style="justify-content:space-between">
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -262,206 +197,160 @@
     </div>
   </div>
 
-  <!-- Modal / Popup -->
+  <!-- Modal -->
   <div id="overlay" class="overlay" role="dialog" aria-modal="true">
     <div class="modal">
       <h3 id="modalTitle">Message</h3>
       <p id="modalBody">รายละเอียดข้อความ</p>
-      <div class="actions">
-        <button class="btn" onclick="closeModal()">OK</button>
-      </div>
+      <div class="actions"><button class="btn" onclick="closeModal()">OK</button></div>
     </div>
   </div>
 
   <script>
-    // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbzxhkAqkyk2WhdCHN6HggBUhri56LOINAQgE-rcFk35-HCBia4qxC6D-m69Q7uOuahO/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbzxhkAqkyk2WhdCHN6HggBUhri56LOINAQgE-rcFk35-HCBia4qxC6D-m69Q7uOuahO/exec"; // ลงท้าย /exec
 
-    // Master data
     let PARTS = {};
     let PARTS_LC = {};
-    const normalizeKey = (s)=> (s||'').toString().trim().toLowerCase();
+    const normalizeKey = s => (s||'').toString().trim().toLowerCase();
 
-    // ===== Date helpers (NEW: short d-m-yy) =====
+    // ===== Date helpers: d-M-yy =====
     function parseYMD(s){
-      // รับได้ทั้ง 'yyyy-MM-dd' หรือ string ที่ new Date() แล้ว valid
       if(!s) return null;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){
-        const [y,m,d]=s.split('-').map(Number);
-        return new Date(y, m-1, d);
-      }
-      const t = new Date(s);
-      return isNaN(t) ? null : t;
+      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+      const t = new Date(s); return isNaN(t) ? null : t;
     }
     function fmtShortDMY(dLike){
       const d = dLike instanceof Date ? dLike : parseYMD(dLike);
       if(!d) return '';
-      const dd = d.getDate();                 // 1..31 (ไม่ต้อง zero-pad)
-      const mm = d.getMonth()+1;              // 1..12
-      const yy = String(d.getFullYear()).slice(-2); // 2 หลัก
+      const dd = d.getDate();
+      const mm = d.getMonth()+1;
+      const yy = String(d.getFullYear()).slice(-2);
       return `${dd}-${mm}-${yy}`;
     }
 
-    // โหลด part list
+    // cache-buster helper
+    const bust = () => `_=${Date.now()}`;
+    const withBust = url => url + (url.includes('?') ? '&' : '?') + bust();
+
+    // Load PART list
     async function loadParts(){
       try{
-        const resp = await fetch(API_URL + '?action=parts');
-        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
+        const resp = await fetch(withBust(API_URL + '?action=parts'));
+        const data = await resp.json().catch(()=>({ok:false}));
+        if(!data.ok) return;
         PARTS = {}; PARTS_LC = {};
-        for(const p of (data.parts||[])){
-          if(p && p.partNo){
-            const no = String(p.partNo);
-            const name = String(p.partName||'');
-            PARTS[no] = name;
-            PARTS_LC[normalizeKey(no)] = name;
-          }
-        }
-        fillPartNoList();
-      }catch(err){ console.warn('Load parts error:', err); }
-    }
-    function fillPartNoList(){
-      const dl = document.getElementById('partNoList');
-      dl.innerHTML = '';
-      Object.keys(PARTS).forEach(k=>{
-        const opt = document.createElement('option'); opt.value = k; dl.appendChild(opt);
-      });
+        (data.parts||[]).forEach(p=>{
+          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); PARTS_LC[normalizeKey(p.partNo)] = String(p.partName||''); }
+        });
+        const dl = document.getElementById('partNoList'); dl.innerHTML='';
+        Object.keys(PARTS).forEach(k=>{ const opt=document.createElement('option'); opt.value=k; dl.appendChild(opt); });
+      }catch(e){}
     }
 
-    // ==== View helpers ====
-    function showScreen(id){
-      for (const el of document.querySelectorAll('.screen')) el.classList.remove('active');
-      document.getElementById(id).classList.add('active');
-    }
-    function showModal(title, body){
-      document.getElementById('modalTitle').textContent = title;
-      document.getElementById('modalBody').textContent = body;
-      document.getElementById('overlay').classList.add('show');
-    }
-    function closeModal(){ document.getElementById('overlay').classList.remove('show'); }
+    // Views / Modal
+    function showScreen(id){ document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+    function showModal(t,b){ modalTitle.textContent=t; modalBody.textContent=b; overlay.classList.add('show'); }
+    function closeModal(){ overlay.classList.remove('show'); }
 
-    // History helpers
-    function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded = true; } }
+    // History/Dashboard open & reset
+    function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded=true; } }
     function resetHistoryFilters(){ hStart.value=''; hEnd.value=''; hPartNo.value=''; hEmployee.value=''; }
-
-    // Dashboard helpers
-    function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded = true; } }
+    function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded=true; } }
     function resetDashboardFilters(){ dStart.value=''; dEnd.value=''; dPartNo.value=''; dEmployee.value=''; }
 
-    // ==== Login (MVP stub) ====
+    // Login
     function onLogin(){
       const u = document.getElementById('login-username').value.trim();
-      if(!u){ return showModal('Login failed', 'กรุณากรอก Username'); }
+      if(!u) return showModal('Login failed','กรุณากรอก Username');
       localStorage.setItem('loggedUser', u);
-      document.getElementById('employee').value = u;
-      document.getElementById('loginBadge').textContent = `Logged in as: ${u}`;
+      employee.value = u; loginBadge.textContent = `Logged in as: ${u}`;
       showScreen('screen-form');
     }
-    function onLogout(){
-      localStorage.removeItem('loggedUser');
-      document.getElementById('login-username').value = '';
-      document.getElementById('login-password').value = '';
-      showScreen('screen-login');
-    }
+    function onLogout(){ localStorage.removeItem('loggedUser'); login-username.value=''; login-password.value=''; showScreen('screen-login'); }
 
-    // ==== Part link ====
+    // Part link
     function updatePartName(){
-      const pn = document.getElementById('partNo').value.trim();
-      const name = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
-      document.getElementById('partName').value = name;
+      const pn = partNo.value.trim();
+      partName.value = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
     }
 
-    // ==== Lots table ====
-    function lotRowTemplate(idx){
-      return `
-        <div class="lot-row" data-index="${idx}">
-          <input placeholder="Lot No." class="lot-no" />
-          <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
-          <div class="lot-actions">
-            <button class="btn btn-danger" onclick="removeLotRow(${idx})">Remove</button>
-          </div>
-        </div>
-      `;
-    }
-    let lotIndex = 0;
-    function addLotRow(){ const wrap = document.getElementById('lotTable'); const div = document.createElement('div'); div.innerHTML = lotRowTemplate(++lotIndex); wrap.appendChild(div.firstElementChild); }
-    function removeLotRow(idx){ const row = document.querySelector(`.lot-row[data-index="${idx}"]`); if(row) row.remove(); }
-    function clearLots(){ document.getElementById('lotTable').innerHTML=''; lotIndex=0; addLotRow(); }
+    // Lots
+    function lotRowTemplate(i){ return `<div class="lot-row" data-index="${i}">
+      <input placeholder="Lot No." class="lot-no" />
+      <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
+      <div class="lot-actions"><button class="btn btn-danger" onclick="removeLotRow(${i})">Remove</button></div>
+    </div>`;}
+    let lotIndex=0;
+    function addLotRow(){ const div=document.createElement('div'); div.innerHTML=lotRowTemplate(++lotIndex); lotTable.appendChild(div.firstElementChild); }
+    function removeLotRow(i){ const row=document.querySelector(`.lot-row[data-index="${i}"]`); if(row) row.remove(); }
+    function clearLots(){ lotTable.innerHTML=''; lotIndex=0; addLotRow(); }
 
-    // ==== Save ====
+    // Save
     async function onSave(){
       try{
-        const employee = document.getElementById('employee').value.trim();
-        const partNo   = document.getElementById('partNo').value.trim();
-        const partName = document.getElementById('partName').value.trim();
-        const shift    = document.getElementById('shift').value;
-        const note     = document.getElementById('note').value.trim();
-        const userId   = employee ? employee.toLowerCase().replace(/\s+/g,'') : '';
+        const employeeName = employee.value.trim();
+        const pn = partNo.value.trim();
+        const pnName = partName.value.trim();
+        const shiftVal = shift.value;
+        const noteVal = note.value.trim();
+        const userId = employeeName ? employeeName.toLowerCase().replace(/\s+/g,'') : '';
 
         const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
           lotNo: r.querySelector('.lot-no').value.trim(),
-          quantity: Number(r.querySelector('.lot-qty').value || '0')
+          quantity: Number(r.querySelector('.lot-qty').value||'0')
         })).filter(x=>x.lotNo);
 
-        if(!employee || !partNo || lots.length===0){
-          return showModal('Invalid form', 'กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
-        }
-        if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){
-          return showModal('Invalid Part', 'Part No. นี้ไม่มีในรายการ กรุณาเลือกจาก part_list');
-        }
+        if(!employeeName || !pn || lots.length===0) return showModal('Invalid form','กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
+        if(!(PARTS[pn] || PARTS_LC[normalizeKey(pn)])) return showModal('Invalid Part','Part No. นี้ไม่มีในรายการ');
 
-        const payload = { employee, userId, partNo, partName, shift, note, lots };
+        const payload = { employee: employeeName, userId, partNo: pn, partName: pnName, shift: shiftVal, note: noteVal, lots };
         const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON response'}));
-        if(!data.ok){ return showModal('Save failed', data.error || 'Unknown error'); }
+        if(!data.ok) return showModal('Save failed', data.error||'Unknown error');
 
-        showModal('Saved successfully!', 'ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
+        showModal('Saved successfully!','ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
         partNo.value=''; partName.value=''; note.value=''; clearLots();
-
       }catch(err){ showModal('Save failed', String(err)); }
     }
 
-    // ==== History ====
-    function buildQuery(params){ const usp=new URLSearchParams(); Object.entries(params).forEach(([k,v])=>{ if(v!=null && v!=='') usp.set(k,v); }); return usp.toString(); }
+    // Helpers
+    function buildQuery(p){ const u=new URLSearchParams(); Object.entries(p).forEach(([k,v])=>{ if(v!=null && v!=='') u.set(k,v); }); return u.toString(); }
+    function numberFmt(n){ return (n==null||n==='') ? '-' : new Intl.NumberFormat().format(n); }
+
+    // HISTORY (render as short date)
     function renderHistoryTable(rows){
-      const host = document.getElementById('historyTable');
+      const host = historyTable;
       if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
       let html = '<table style="width:100%"><thead><tr style="text-align:left">'
-               + '<th style="padding:10px">Timestamp</th>'
-               + '<th style="padding:10px">Employee</th>'
-               + '<th style="padding:10px">Part No.</th>'
-               + '<th style="padding:10px">Part Name</th>'
-               + '<th style="padding:10px">Lot No.</th>'
-               + '<th style="padding:10px;text-align:right">Qty</th>'
-               + '<th style="padding:10px">Shift</th>'
-               + '<th style="padding:10px">Note</th>'
-               + '</tr></thead><tbody>';
+        + '<th style="padding:10px">Date</th>'
+        + '<th style="padding:10px">Employee</th>'
+        + '<th style="padding:10px">Part No.</th>'
+        + '<th style="padding:10px">Part Name</th>'
+        + '<th style="padding:10px">Lot No.</th>'
+        + '<th style="padding:10px;text-align:right">Qty</th>'
+        + '<th style="padding:10px">Shift</th>'
+        + '<th style="padding:10px">Note</th>'
+        + '</tr></thead><tbody>';
       for(const r of rows){
+        const shortDate = fmtShortDMY(r.Timestamp) || r.Timestamp;
         html += '<tr>'
-          + `<td style="padding:8px;white-space:nowrap">${r.Timestamp || ''}</td>`
-          + `<td style="padding:8px">${r.Employee || ''}</td>`
-          + `<td style="padding:8px">${r['Part No.'] || ''}</td>`
-          + `<td style="padding:8px">${r['Part Name'] || ''}</td>`
-          + `<td style="padding:8px">${r['Lot No.'] || ''}</td>`
-          + `<td style="padding:8px;text-align:right">${r.Quantity ?? ''}</td>`
-          + `<td style="padding:8px">${r.Shift || ''}</td>`
-          + `<td style="padding:8px">${r.Note || ''}</td>`
+          + `<td style="padding:8px;white-space:nowrap">${shortDate}</td>`
+          + `<td style="padding:8px">${r.Employee||''}</td>`
+          + `<td style="padding:8px">${r['Part No.']||''}</td>`
+          + `<td style="padding:8px">${r['Part Name']||''}</td>`
+          + `<td style="padding:8px">${r['Lot No.']||''}</td>`
+          + `<td style="padding:8px;text-align:right">${r.Quantity??''}</td>`
+          + `<td style="padding:8px">${r.Shift||''}</td>`
+          + `<td style="padding:8px">${r.Note||''}</td>`
           + '</tr>';
       }
       html += '</tbody></table>';
       host.innerHTML = html;
     }
     async function loadHistory(){
-      const p = {
-        action:'history',
-        start: hStart.value,
-        end:   hEnd.value,
-        partNo: hPartNo.value.trim(),
-        employee: hEmployee.value.trim(),
-        limit: 2000
-      };
+      const p = { action:'history', start:hStart.value, end:hEnd.value, partNo:hPartNo.value.trim(), employee:hEmployee.value.trim(), limit:2000 };
       try{
-        const resp = await fetch(API_URL + '?' + buildQuery(p));
+        const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
         if(!data.ok){ historyMeta.textContent='Error'; return showModal('Load failed', data.error||'Unknown error'); }
         historyMeta.textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
@@ -469,164 +358,98 @@
         loadHistory._lastRows = data.rows || [];
       }catch(err){ showModal('Load failed', String(err)); }
     }
-    function toCSV(rows){
+
+    // CSV (UPDATED: คอลัมน์แรกเป็น Date แบบ d-M-yy)
+    function toCSVShortDate(rows){
       if(!rows || rows.length===0) return '';
-      const headers = ['Timestamp','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
-      const esc = (v)=>{ const s=(v==null)?'':String(v); const need=/[",\n]/.test(s); const body=s.replace(/"/g,'""'); return need?`"${body}"`:body; };
+      const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
+      const esc = v=>{ const s=(v==null)?'':String(v).replace(/"/g,'""'); return /[",\n]/.test(s)?`"${s}"`:s; };
       const lines=[headers.join(',')];
-      for(const r of rows){ lines.push(headers.map(h=>esc(r[h])).join(',')); }
-      return '\uFEFF'+lines.join('\r\n');
-    }
-    function downloadCSV(filename, content){
-      const blob=new Blob([content],{type:'text/csv;charset=utf-8;'});
-      const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
+      for(const r of rows){
+        const dateShort = fmtShortDMY(r.Timestamp) || String(r.Timestamp||'');
+        const row = [
+          dateShort,
+          r.Employee,
+          r['Part No.'],
+          r['Part Name'],
+          r['Lot No.'],
+          r.Quantity,
+          r.Shift,
+          r.Note
+        ];
+        lines.push(row.map(esc).join(','));
+      }
+      return '\uFEFF' + lines.join('\r\n'); // BOM for Thai in Excel
     }
     async function exportHistoryCSV(){
       if(!loadHistory._lastRows){ await loadHistory(); }
-      const rows = loadHistory._lastRows || [];
-      if(rows.length===0){ return showModal('Export CSV','ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)'); }
+      const rows=loadHistory._lastRows||[];
+      if(rows.length===0) return showModal('Export CSV','ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)');
       const start = hStart.value ? fmtShortDMY(hStart.value) : 'all';
       const end   = hEnd.value ? fmtShortDMY(hEnd.value) : 'all';
-      downloadCSV(`inspection_history_${start}_to_${end}.csv`, toCSV(rows));
+      const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
+      setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
     }
 
-    // ==== Dashboard ====
-    function numberFmt(n){ return (n==null||n==='') ? '-' : new Intl.NumberFormat().format(n); }
+    // Dashboard tables & charts
     function renderTable(containerId, title, rows, cols){
-      const host = document.getElementById(containerId);
-      if(!rows || rows.length===0){ host.innerHTML = `<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
-      let html = `<div class="muted" style="padding:8px 12px">${title}</div>`;
-      html += '<table style="width:100%"><thead><tr style="text-align:left">';
-      for(const c of cols){ html += `<th style="padding:10px">${c}</th>`; }
-      html += '</tr></thead><tbody>';
-      for(const r of rows){
-        html += '<tr>';
-        for(const c of cols){
-          const v = r[c];
-          const padRight = (c.toLowerCase().includes('qty') || c.toLowerCase().includes('records')) ? 'text-align:right' : '';
-          html += `<td style="padding:8px;${padRight}">${v ?? ''}</td>`;
-        }
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-      host.innerHTML = html;
+      const host=document.getElementById(containerId);
+      if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
+      let html=`<div class="muted" style="padding:8px 12px">${title}</div><table style="width:100%"><thead><tr style="text-align:left">`;
+      cols.forEach(c=>html+=`<th style="padding:10px">${c}</th>`); html+='</tr></thead><tbody>';
+      rows.forEach(r=>{ html+='<tr>'; cols.forEach(c=>{ const v=r[c]; const pr=(/qty|records/i.test(c)?'text-align:right':''); html+=`<td style="padding:8px;${pr}">${v??''}</td>`; }); html+='</tr>'; });
+      html+='</tbody></table>'; host.innerHTML=html;
     }
     function renderBarChart(canvasId, labels, values){
-      const canvas = document.getElementById(canvasId);
-      const ctx = canvas.getContext('2d');
+      const canvas=document.getElementById(canvasId), ctx=canvas.getContext('2d');
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(!labels || labels.length===0){ ctx.fillText('No data', 10, 20); return; }
-
-      const m = {l:60, r:10, t:10, b:80};
-      const W = canvas.width - m.l - m.r;
-      const H = canvas.height - m.t - m.b;
-      const maxY = Math.max(...values.map(v=>Number(v)||0), 10);
-      const n = labels.length;
-      const xStep = W / n;
-      const barW = Math.max(6, Math.min(40, xStep*0.6));
-
-      // axes
-      ctx.strokeStyle = '#94a3b8';
-      ctx.beginPath();
-      ctx.moveTo(m.l, m.t);
-      ctx.lineTo(m.l, m.t + H);
-      ctx.lineTo(m.l + W, m.t + H);
-      ctx.stroke();
-
-      // y ticks
-      ctx.fillStyle = '#64748b';
-      ctx.font = '12px sans-serif';
-      const ticks = 5;
-      for(let i=0;i<=ticks;i++){
-        const yVal = Math.round(maxY * (i/ticks));
-        const y = m.t + H - (yVal / maxY) * H;
-        ctx.fillText(numberFmt(yVal), 8, y+4);
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.beginPath();
-        ctx.moveTo(m.l, y);
-        ctx.lineTo(m.l + W, y);
-        ctx.stroke();
-      }
-
-      // bars
-      ctx.fillStyle = '#1e88e5';
-      for(let i=0;i<n;i++){
-        const yVal = Number(values[i])||0;
-        const h = (yVal / maxY) * H;
-        const xCenter = m.l + xStep*i + xStep/2;
-        const x = xCenter - barW/2;
-        const y = m.t + H - h;
-        ctx.fillRect(x, y, barW, h);
-      }
-
-      // x labels (rotate)
-      ctx.save();
-      ctx.translate(0,0);
-      ctx.fillStyle = '#64748b';
-      ctx.textAlign = 'right';
-      ctx.font = '11px sans-serif';
-      for(let i=0;i<n;i++){
-        const xCenter = m.l + xStep*i + xStep/2;
-        const label = labels[i];
-        ctx.save();
-        ctx.translate(xCenter, m.t + H + 6);
-        ctx.rotate(-Math.PI/4);
-        ctx.fillText(label, 0, 16);
-        ctx.restore();
-      }
+      if(!labels || labels.length===0){ ctx.fillText('No data',10,20); return; }
+      const m={l:60,r:10,t:10,b:80}, W=canvas.width-m.l-m.r, H=canvas.height-m.t-m.b;
+      const maxY=Math.max(...values.map(v=>Number(v)||0),10), n=labels.length, xStep=W/n, barW=Math.max(6,Math.min(40,xStep*0.6));
+      ctx.strokeStyle='#94a3b8'; ctx.beginPath(); ctx.moveTo(m.l,m.t); ctx.lineTo(m.l,m.t+H); ctx.lineTo(m.l+W,m.t+H); ctx.stroke();
+      ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; const ticks=5;
+      for(let i=0;i<=ticks;i++){ const yVal=Math.round(maxY*(i/ticks)), y=m.t+H-(yVal/maxY)*H; ctx.fillText(numberFmt(yVal),8,y+4); ctx.strokeStyle='#e2e8f0'; ctx.beginPath(); ctx.moveTo(m.l,y); ctx.lineTo(m.l+W,y); ctx.stroke(); }
+      ctx.fillStyle='#1e88e5';
+      for(let i=0;i<n;i++){ const yVal=Number(values[i])||0, h=(yVal/maxY)*H, xCenter=m.l+xStep*i+xStep/2, x=xCenter-barW/2, y=m.t+H-h; ctx.fillRect(x,y,barW,h); }
+      ctx.save(); ctx.fillStyle='#64748b'; ctx.textAlign='right'; ctx.font='11px sans-serif';
+      for(let i=0;i<n;i++){ const xCenter=m.l+xStep*i+xStep/2, label=labels[i]; ctx.save(); ctx.translate(xCenter,m.t+H+6); ctx.rotate(-Math.PI/4); ctx.fillText(label,0,16); ctx.restore(); }
       ctx.restore();
     }
-
     async function loadDashboard(){
-      const p = {
-        action:'dashboard',
-        start: dStart.value,
-        end:   dEnd.value,
-        partNo: dPartNo.value.trim(),
-        employee: dEmployee.value.trim(),
-      };
+      const p={ action:'dashboard', start:dStart.value, end:dEnd.value, partNo:dPartNo.value.trim(), employee:dEmployee.value.trim() };
       try{
-        const resp = await fetch(API_URL + '?' + buildQuery(p));
+        const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
         const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
         if(!data.ok){ dashMeta.textContent='Error'; return showModal('Dashboard error', data.error||'Unknown'); }
 
-        // KPIs
-        kpiRecords.textContent   = numberFmt(data.totals.records);
-        kpiQty.textContent       = numberFmt(data.totals.totalQty);
-        kpiParts.textContent     = numberFmt(data.totals.uniqueParts);
-        kpiEmployees.textContent = numberFmt(data.totals.employees);
+        kpiRecords.textContent=numberFmt(data.totals.records);
+        kpiQty.textContent=numberFmt(data.totals.totalQty);
+        kpiParts.textContent=numberFmt(data.totals.uniqueParts);
+        kpiEmployees.textContent=numberFmt(data.totals.employees);
 
-        // Tables
-        renderTable('tblByPart', 'By Part', data.byPart, ['Part No.','Part Name','Records','Qty']);
-        renderTable('tblByEmployee', 'By Employee', data.byEmployee, ['Employee','Records','Qty']);
-        renderTable('tblByShift', 'By Shift', data.byShift, ['Shift','Records','Qty']);
+        renderTable('tblByPart','By Part',data.byPart,['Part No.','Part Name','Records','Qty']);
+        renderTable('tblByEmployee','By Employee',data.byEmployee,['Employee','Records','Qty']);
+        renderTable('tblByShift','By Shift',data.byShift,['Shift','Records','Qty']);
 
-        // ===== Format labels to d-m-yy here =====
-        const dailyLabels = (data.daily||[]).map(d => fmtShortDMY(d.date));
-        const dailyValues = (data.daily||[]).map(d => d.qty);
+        const dailyLabels = (data.daily||[]).map(d=>fmtShortDMY(d.date));
+        const dailyValues = (data.daily||[]).map(d=>d.qty);
         renderBarChart('dailyChart', dailyLabels, dailyValues);
 
         const lots = data.byLot || [];
         const topLots = lots.slice(0,30);
-        renderBarChart('lotChart',
-          topLots.map(x => String(x['Lot No.']||'')),
-          topLots.map(x => x.Qty)
-        );
-        renderTable('tblByLot', 'By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
+        renderBarChart('lotChart', topLots.map(x=>String(x['Lot No.']||'')), topLots.map(x=>x.Qty));
+        renderTable('tblByLot','By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
 
-        // Range text -> short d-m-yy
-        const rangeText = (dStart.value || dEnd.value)
-          ? `${dStart.value ? fmtShortDMY(dStart.value) : '...'} → ${dEnd.value ? fmtShortDMY(dEnd.value) : '...'}`
-          : 'All time';
+        const rangeText = (dStart.value||dEnd.value) ? `${dStart.value?fmtShortDMY(dStart.value):'...'} → ${dEnd.value?fmtShortDMY(dEnd.value):'...'}` : 'All time';
         dashMeta.textContent = `Range: ${rangeText} | Records: ${numberFmt(data.totals.records)}`;
-
       }catch(err){ showModal('Dashboard error', String(err)); }
     }
 
-    // ==== init ====
     (async function init(){
       await loadParts();
-      const u = localStorage.getItem('loggedUser');
+      const u=localStorage.getItem('loggedUser');
       if(u){ employee.value=u; loginBadge.textContent=`Logged in as: ${u}`; showScreen('screen-form'); }
       else { showScreen('screen-login'); }
       clearLots();
