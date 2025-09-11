@@ -105,12 +105,19 @@
         <div class="row">
           <div>
             <label>Part No.</label>
-            <input id="partNo"$1oninput="updatePartName()" onchange="updatePartName()" />
+            <input id="partNo"
+                   list="partNoList"
+                   placeholder="เช่น ABC-123"
+                   oninput="updatePartName()"
+                   onchange="updatePartName()" />
             <datalist id="partNoList"></datalist>
           </div>
           <div>
             <label>Part Name</label>
-            <input id="partName" readonly placeholder="จะเติมอัตโนมัติจาก Part No." />
+            <input id="partName"
+                   readonly tabindex="-1" onfocus="this.blur()" inputmode="none"
+                   placeholder="จะเติมอัตโนมัติจาก Part No."
+                   style="background:#f8fafc; cursor:not-allowed;" />
           </div>
         </div>
 
@@ -152,13 +159,14 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbxd_mmWMnjKD4fcBO2WHyMkb5nrEkHwoDLELwSI1TIwHR3EjMwNPPWuNoJZ-TAqkgkx/exec"; // TODO: ใส่ URL จาก GAS Deploy
+    const API_URL = "PASTE_YOUR_GAS_WEB_APP_URL_HERE"; // TODO: ใส่ URL จาก GAS Deploy
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
     let PARTS = {};
     let PARTS_LC = {};
     function normalizeKey(s){ return (s||'').toString().trim().toLowerCase(); }
 
+    // โหลด part list จาก GAS
     async function loadParts(){
       try{
         const resp = await fetch(API_URL + '?action=parts');
@@ -175,14 +183,6 @@
           }
         }
         fillPartNoList();
-      }catch(err){ console.warn('Load parts error:', err); }
-    }));
-        if(!data.ok){ console.warn('Load parts failed:', data.error); return; }
-        PARTS = {};
-        for(const p of (data.parts||[])){
-          if(p && p.partNo){ PARTS[String(p.partNo)] = String(p.partName||''); }
-        }
-        await loadParts();
       }catch(err){ console.warn('Load parts error:', err); }
     }
 
@@ -283,6 +283,12 @@
           return showModal('Invalid form', 'กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
         }
 
+        // บังคับว่า Part No. ต้องอยู่ใน part_list
+        const exists = !!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)]);
+        if(!exists){
+          return showModal('Invalid Part', 'Part No. นี้ไม่มีในรายการ กรุณาเลือกจาก part_list');
+        }
+
         const payload = { employee, userId, partNo, partName, shift, note, lots };
 
         // สำคัญ: ไม่ตั้ง headers เพื่อหลีกเลี่ยง preflight CORS
@@ -323,4 +329,3 @@
   </script>
 </body>
 </html>
-
