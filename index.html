@@ -184,9 +184,10 @@
           </div>
         </div>
         <div class="toolbar" style="justify-content:space-between">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" onclick="resetHistoryFilters()">Reset</button>
             <button class="btn btn-primary" onclick="loadHistory()">Search</button>
+            <button class="btn btn-ghost" onclick="exportHistoryCSV()">Export CSV</button>
           </div>
           <div>
             <span class="muted" id="historyMeta"></span>
@@ -223,7 +224,7 @@
           </div>
         </div>
         <div class="toolbar" style="justify-content:space-between">
-          <div style="display:flex;gap:8px">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
             <button class="btn" onclick="resetDashboardFilters()">Reset</button>
             <button class="btn btn-primary" onclick="loadDashboard()">Update</button>
           </div>
@@ -282,7 +283,7 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbxw24-tInhcC7wdJ_FRMl57j6B-NJKbWtQK9afnO1dvuvfIFB9uFb0_wkvWVmIU-msw/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbwkg5bdMIXQuVMG9Z20eGB2olNo1OSZGYUseNZT4Ux58S34aeV2W6YsnVLwCWMoZVQQ/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
     let PARTS = {};
@@ -496,7 +497,7 @@
         end: document.getElementById('hEnd').value,
         partNo: document.getElementById('hPartNo').value.trim(),
         employee: document.getElementById('hEmployee').value.trim(),
-        limit: 200
+        limit: 2000
       };
       const url = API_URL + '?' + buildQuery(p);
       try{
@@ -508,9 +509,51 @@
         }
         document.getElementById('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
         renderHistoryTable(data.rows);
+        // เก็บไว้ให้ export ใช้ซ้ำ
+        loadHistory._lastRows = data.rows || [];
       }catch(err){
         showModal('Load failed', String(err));
       }
+    }
+    function toCSV(rows){
+      if(!rows || rows.length===0) return '';
+      const headers = ['Timestamp','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
+      const esc = (v) => {
+        const s = (v==null) ? '' : String(v);
+        const needQuote = /[",\n]/.test(s);
+        const body = s.replace(/"/g,'""');
+        return needQuote ? `"${body}"` : body;
+      };
+      let lines = [];
+      lines.push(headers.map(esc).join(','));
+      for(const r of rows){
+        lines.push(headers.map(h=>esc(r[h])).join(','));
+      }
+      // ใส่ BOM เพื่อให้ Excel เปิดภาษาไทยถูก
+      return '\uFEFF' + lines.join('\r\n');
+    }
+    function downloadCSV(filename, content){
+      const blob = new Blob([content], {type:'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+    }
+    async function exportHistoryCSV(){
+      // ถ้าเพิ่งเปิดหน้าแล้วยังไม่กด Search เลย ให้โหลดก่อน 1 ครั้ง
+      if(!loadHistory._lastRows){ await loadHistory(); }
+      const rows = loadHistory._lastRows || [];
+      if(rows.length === 0){
+        return showModal('Export CSV', 'ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)');
+      }
+      const csv = toCSV(rows);
+      const start = document.getElementById('hStart').value || 'all';
+      const end = document.getElementById('hEnd').value || 'all';
+      const filename = `inspection_history_${start}_to_${end}.csv`;
+      downloadCSV(filename, csv);
     }
 
     // ==== Dashboard ====
@@ -540,17 +583,14 @@
       ctx.clearRect(0,0,canvas.width,canvas.height);
       if(!points || points.length===0){ ctx.fillText('No data', 10, 20); return; }
 
-      // margins
       const m = {l:50, r:10, t:10, b:40};
       const W = canvas.width - m.l - m.r;
       const H = canvas.height - m.t - m.b;
 
-      // scales
       const maxY = Math.max(...points.map(p=>Number(p.qty)||0), 10);
       const xStep = W / points.length;
       const barW = Math.max(8, xStep * 0.6);
 
-      // axes
       ctx.strokeStyle = '#94a3b8';
       ctx.beginPath();
       ctx.moveTo(m.l, m.t);
@@ -558,7 +598,6 @@
       ctx.lineTo(m.l + W, m.t + H);
       ctx.stroke();
 
-      // y ticks
       ctx.fillStyle = '#64748b';
       ctx.font = '12px sans-serif';
       const ticks = 5;
@@ -573,7 +612,6 @@
         ctx.stroke();
       }
 
-      // bars
       ctx.fillStyle = '#1e88e5';
       points.forEach((p,idx)=>{
         const xCenter = m.l + xStep*idx + xStep/2;
@@ -584,7 +622,6 @@
         ctx.fillRect(x, y, barW, h);
       });
 
-      // x labels
       ctx.fillStyle = '#64748b';
       ctx.textAlign = 'center';
       points.forEach((p,idx)=>{
