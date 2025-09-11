@@ -229,6 +229,7 @@
       const yy = String(d.getFullYear()).slice(-2);
       return `${dd}-${mm}-${yy}`;
     }
+    function shortIfDate(v){ const s=fmtShortDMY(v); return s || v || ''; }
 
     // cache-buster
     const bust = () => `_=${Date.now()}`;
@@ -340,13 +341,14 @@
         + '<th style="padding:10px">Note</th>'
         + '</tr></thead><tbody>';
       for(const r of rows){
-        const shortDate = fmtShortDMY(r.Timestamp) || r.Timestamp;
+        const shortDate = shortIfDate(r.Timestamp);
+        const lotShort  = shortIfDate(r['Lot No.']);   // <<---- ทำให้ Lot No. เป็น d-M-yy
         html += '<tr>'
           + `<td style="padding:8px;white-space:nowrap">${shortDate}</td>`
           + `<td style="padding:8px">${r.Employee||''}</td>`
           + `<td style="padding:8px">${r['Part No.']||''}</td>`
           + `<td style="padding:8px">${r['Part Name']||''}</td>`
-          + `<td style="padding:8px">${r['Lot No.']||''}</td>`
+          + `<td style="padding:8px">${lotShort}</td>`
           + `<td style="padding:8px;text-align:right">${r.Quantity??''}</td>`
           + `<td style="padding:8px">${r.Shift||''}</td>`
           + `<td style="padding:8px">${r.Note||''}</td>`
@@ -368,15 +370,16 @@
     }
     function resetHistoryFilters(){ el('hStart').value=''; el('hEnd').value=''; el('hPartNo').value=''; el('hEmployee').value=''; }
 
-    // CSV (Date = d-M-yy)
+    // CSV (Date & Lot No. เป็น d-M-yy)
     function toCSVShortDate(rows){
       if(!rows || rows.length===0) return '';
       const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
       const esc = v=>{ const s=(v==null)?'':String(v).replace(/"/g,'""'); return /[",\n]/.test(s)?`"${s}"`:s; };
       const lines=[headers.join(',')];
       for(const r of rows){
-        const dateShort = fmtShortDMY(r.Timestamp) || String(r.Timestamp||'');
-        const row = [dateShort, r.Employee, r['Part No.'], r['Part Name'], r['Lot No.'], r.Quantity, r.Shift, r.Note];
+        const dateShort = shortIfDate(r.Timestamp);
+        const lotShort  = shortIfDate(r['Lot No.']);     // <<---- CSV ก็สั้น
+        const row = [dateShort, r.Employee, r['Part No.'], r['Part Name'], lotShort, r.Quantity, r.Shift, r.Note];
         lines.push(row.map(esc).join(','));
       }
       return '\uFEFF' + lines.join('\r\n');
@@ -385,8 +388,8 @@
       if(!loadHistory._lastRows){ await loadHistory(); }
       const rows=loadHistory._lastRows||[];
       if(rows.length===0) return showModal('Export CSV','ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)');
-      const start = el('hStart').value ? fmtShortDMY(el('hStart').value) : 'all';
-      const end   = el('hEnd').value ? fmtShortDMY(el('hEnd').value) : 'all';
+      const start = el('hStart').value ? shortIfDate(el('hStart').value) : 'all';
+      const end   = el('hEnd').value ? shortIfDate(el('hEnd').value)   : 'all';
       const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
       const url = URL.createObjectURL(blob);
       const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
@@ -437,7 +440,11 @@
         const dailyValues = (data.daily||[]).map(d=>d.qty);
         renderBarChart('dailyChart', dailyLabels, dailyValues);
 
-        const lots = data.byLot || [];
+        // --- By Lot: ทำให้ป้ายชื่อและตารางเป็น d-M-yy ถ้าเป็นวันที่ ---
+        const lots = (data.byLot||[]).map(x=>({
+          ...x,
+          'Lot No.': shortIfDate(x['Lot No.'])
+        }));
         const topLots = lots.slice(0,30);
         renderBarChart('lotChart', topLots.map(x=>String(x['Lot No.']||'')), topLots.map(x=>x.Qty));
         renderTable('tblByLot','By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
