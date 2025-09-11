@@ -8,7 +8,7 @@
     :root{--bg1:#0b2a55;--bg2:#134b8a;--accent:#1e88e5;--accent-2:#90caf9;--ok:#1b5e20;--danger:#c62828;--card:#ffffff;--muted:#6b7280}
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100dvh;color:#0f172a;display:flex;align-items:center;justify-content:center}
-    .container{width:min(920px,95vw);}
+    .container{width:min(1100px,95vw);}
     .card{background:var(--card);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
     header{padding:28px 28px 18px;background:transparent;color:#e3f2fd;text-align:center}
     header h1{margin:0;font-weight:700;font-size:clamp(20px,3.6vw,28px)}
@@ -54,6 +54,15 @@
     .login-hero{padding:28px;text-align:center;color:white}
     .login-hero h2{margin:0 0 6px;font-size:clamp(22px,6vw,30px)}
     .login-hero p{margin:0;color:#cfe8ff}
+
+    /* Dashboard */
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    .kpi .cardk{background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px}
+    .kpi .title{font-size:12px;color:#64748b}
+    .kpi .value{font-size:22px;font-weight:700;margin-top:6px}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px}
+    canvas{max-width:100%;height:320px}
   </style>
 </head>
 <body>
@@ -69,6 +78,7 @@
         <div class="toolbar" style="justify-content:flex-start;gap:8px">
           <button class="btn btn-ghost" onclick="showScreen('screen-form')">➕ New Entry</button>
           <button class="btn btn-ghost" onclick="openHistory()">📜 History / Search</button>
+          <button class="btn btn-ghost" onclick="openDashboard()">📊 Dashboard</button>
         </div>
       </div>
 
@@ -183,9 +193,75 @@
           </div>
         </div>
         <div style="margin-top:14px">
-          <div id="historyTable" style="overflow:auto;border:1px solid #e5e7eb;border-radius:12px"></div>
+          <div id="historyTable" class="table-wrap"></div>
         </div>
         <div class="toolbar" style="justify-content:flex-end">
+          <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
+        </div>
+      </section>
+
+      <!-- DASHBOARD SCREEN -->
+      <section id="screen-dashboard" class="section screen">
+        <div class="row">
+          <div>
+            <label>Start date</label>
+            <input type="date" id="dStart" />
+          </div>
+          <div>
+            <label>End date</label>
+            <input type="date" id="dEnd" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Part No. (filter)</label>
+            <input id="dPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" />
+          </div>
+          <div>
+            <label>Employee (filter)</label>
+            <input id="dEmployee" placeholder="เช่น Champ" />
+          </div>
+        </div>
+        <div class="toolbar" style="justify-content:space-between">
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="resetDashboardFilters()">Reset</button>
+            <button class="btn btn-primary" onclick="loadDashboard()">Update</button>
+          </div>
+          <div><span class="muted" id="dashMeta"></span></div>
+        </div>
+
+        <div class="kpi" style="margin-top:14px">
+          <div class="cardk">
+            <div class="title">Total Records</div>
+            <div class="value" id="kpiRecords">-</div>
+          </div>
+          <div class="cardk">
+            <div class="title">Total Quantity</div>
+            <div class="value" id="kpiQty">-</div>
+          </div>
+          <div class="cardk">
+            <div class="title">Unique Parts</div>
+            <div class="value" id="kpiParts">-</div>
+          </div>
+          <div class="cardk">
+            <div class="title">Employees</div>
+            <div class="value" id="kpiEmployees">-</div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:16px">
+          <div class="table-wrap" id="tblByPart"></div>
+          <div class="table-wrap" id="tblByEmployee"></div>
+        </div>
+
+        <div style="margin-top:16px" class="table-wrap" id="tblByShift"></div>
+
+        <div style="margin-top:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
+          <div class="muted" style="margin-bottom:6px">Daily Quantity</div>
+          <canvas id="dailyChart" width="900" height="320"></canvas>
+        </div>
+
+        <div class="toolbar" style="justify-content:flex-end;margin-top:10px">
           <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
         </div>
       </section>
@@ -206,7 +282,7 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbzk_Yuq9MFXkCTjAgVcRbw6rIAZ7K32ZtBvld1pCJP6Y73vn2TEccY7IBfd2g4lShqG/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbxw24-tInhcC7wdJ_FRMl57j6B-NJKbWtQK9afnO1dvuvfIFB9uFb0_wkvWVmIU-msw/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
     let PARTS = {};
@@ -266,6 +342,18 @@
       document.getElementById('hEnd').value = '';
       document.getElementById('hPartNo').value = '';
       document.getElementById('hEmployee').value = '';
+    }
+
+    // Dashboard helpers
+    function openDashboard(){
+      showScreen('screen-dashboard');
+      if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded = true; }
+    }
+    function resetDashboardFilters(){
+      document.getElementById('dStart').value = '';
+      document.getElementById('dEnd').value = '';
+      document.getElementById('dPartNo').value = '';
+      document.getElementById('dEmployee').value = '';
     }
 
     // ==== Login (MVP stub) ====
@@ -425,6 +513,118 @@
       }
     }
 
+    // ==== Dashboard ====
+    function numberFmt(n){ return (n==null||n==='') ? '-' : new Intl.NumberFormat().format(n); }
+    function renderTable(containerId, title, rows, cols){
+      const host = document.getElementById(containerId);
+      if(!rows || rows.length===0){ host.innerHTML = `<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
+      let html = `<div class="muted" style="padding:8px 12px">${title}</div>`;
+      html += '<table style="width:100%"><thead><tr style="text-align:left">';
+      for(const c of cols){ html += `<th style="padding:10px">${c}</th>`; }
+      html += '</tr></thead><tbody>';
+      for(const r of rows){
+        html += '<tr>';
+        for(const c of cols){
+          const v = r[c];
+          const padRight = (c.toLowerCase().includes('qty') || c.toLowerCase().includes('records')) ? 'text-align:right' : '';
+          html += `<td style="padding:8px;${padRight}">${v ?? ''}</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+      host.innerHTML = html;
+    }
+    function renderDailyChart(points){
+      const canvas = document.getElementById('dailyChart');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      if(!points || points.length===0){ ctx.fillText('No data', 10, 20); return; }
+
+      // margins
+      const m = {l:50, r:10, t:10, b:40};
+      const W = canvas.width - m.l - m.r;
+      const H = canvas.height - m.t - m.b;
+
+      // scales
+      const maxY = Math.max(...points.map(p=>Number(p.qty)||0), 10);
+      const xStep = W / points.length;
+      const barW = Math.max(8, xStep * 0.6);
+
+      // axes
+      ctx.strokeStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.moveTo(m.l, m.t);
+      ctx.lineTo(m.l, m.t + H);
+      ctx.lineTo(m.l + W, m.t + H);
+      ctx.stroke();
+
+      // y ticks
+      ctx.fillStyle = '#64748b';
+      ctx.font = '12px sans-serif';
+      const ticks = 5;
+      for(let i=0;i<=ticks;i++){
+        const yVal = Math.round(maxY * (i/ticks));
+        const y = m.t + H - (yVal / maxY) * H;
+        ctx.fillText(numberFmt(yVal), 8, y+4);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.moveTo(m.l, y);
+        ctx.lineTo(m.l + W, y);
+        ctx.stroke();
+      }
+
+      // bars
+      ctx.fillStyle = '#1e88e5';
+      points.forEach((p,idx)=>{
+        const xCenter = m.l + xStep*idx + xStep/2;
+        const yVal = Number(p.qty)||0;
+        const h = (yVal / maxY) * H;
+        const x = xCenter - barW/2;
+        const y = m.t + H - h;
+        ctx.fillRect(x, y, barW, h);
+      });
+
+      // x labels
+      ctx.fillStyle = '#64748b';
+      ctx.textAlign = 'center';
+      points.forEach((p,idx)=>{
+        const xCenter = m.l + xStep*idx + xStep/2;
+        ctx.fillText(p.date, xCenter, m.t + H + 16);
+      });
+      ctx.textAlign = 'left';
+    }
+
+    async function loadDashboard(){
+      const p = {
+        action: 'dashboard',
+        start: document.getElementById('dStart').value,
+        end: document.getElementById('dEnd').value,
+        partNo: document.getElementById('dPartNo').value.trim(),
+        employee: document.getElementById('dEmployee').value.trim(),
+      };
+      const url = API_URL + '?' + buildQuery(p);
+      try{
+        const resp = await fetch(url);
+        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
+        if(!data.ok){ document.getElementById('dashMeta').textContent = 'Error'; return showModal('Dashboard error', data.error||'Unknown'); }
+
+        document.getElementById('kpiRecords').textContent = numberFmt(data.totals.records);
+        document.getElementById('kpiQty').textContent = numberFmt(data.totals.totalQty);
+        document.getElementById('kpiParts').textContent = numberFmt(data.totals.uniqueParts);
+        document.getElementById('kpiEmployees').textContent = numberFmt(data.totals.employees);
+
+        renderTable('tblByPart', 'By Part', data.byPart, ['Part No.','Part Name','Records','Qty']);
+        renderTable('tblByEmployee', 'By Employee', data.byEmployee, ['Employee','Records','Qty']);
+        renderTable('tblByShift', 'By Shift', data.byShift, ['Shift','Records','Qty']);
+
+        renderDailyChart(data.daily || []);
+        document.getElementById('dashMeta').textContent = `Range: ${data.range || '-'} | Records: ${numberFmt(data.totals.records)}`;
+
+      }catch(err){
+        showModal('Dashboard error', String(err));
+      }
+    }
+
     // ==== init ====
     (async function init(){
       await loadParts(); // โหลด part_list ก่อน
@@ -436,7 +636,7 @@
       } else {
         showScreen('screen-login');
       }
-      clearLots(); // เตรียม 1 แถว lot เริ่มต้น
+      clearLots();
     })();
   </script>
 </body>
