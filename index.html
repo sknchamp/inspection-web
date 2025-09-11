@@ -257,10 +257,18 @@
 
         <div style="margin-top:16px" class="table-wrap" id="tblByShift"></div>
 
-        <div style="margin-top:16px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
-          <div class="muted" style="margin-bottom:6px">Daily Quantity</div>
-          <canvas id="dailyChart" width="900" height="320"></canvas>
+        <div class="grid-2" style="margin-top:16px">
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
+            <div class="muted" style="margin-bottom:6px">Daily Quantity</div>
+            <canvas id="dailyChart" width="900" height="320"></canvas>
+          </div>
+          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
+            <div class="muted" style="margin-bottom:6px">Top Lots by Quantity</div>
+            <canvas id="lotChart" width="900" height="320"></canvas>
+          </div>
         </div>
+
+        <div style="margin-top:16px" class="table-wrap" id="tblByLot"></div>
 
         <div class="toolbar" style="justify-content:flex-end;margin-top:10px">
           <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
@@ -283,7 +291,7 @@
 
   <script>
     // ==== CONFIG ====
-    const API_URL = "https://script.google.com/macros/s/AKfycbwkg5bdMIXQuVMG9Z20eGB2olNo1OSZGYUseNZT4Ux58S34aeV2W6YsnVLwCWMoZVQQ/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbzxhkAqkyk2WhdCHN6HggBUhri56LOINAQgE-rcFk35-HCBia4qxC6D-m69Q7uOuahO/exec"; // ใส่ URL จาก GAS Deploy (ลงท้าย /exec)
 
     // Master data: จะโหลดจากชีต `part_list` ผ่าน GAS
     let PARTS = {};
@@ -509,7 +517,6 @@
         }
         document.getElementById('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
         renderHistoryTable(data.rows);
-        // เก็บไว้ให้ export ใช้ซ้ำ
         loadHistory._lastRows = data.rows || [];
       }catch(err){
         showModal('Load failed', String(err));
@@ -529,8 +536,7 @@
       for(const r of rows){
         lines.push(headers.map(h=>esc(r[h])).join(','));
       }
-      // ใส่ BOM เพื่อให้ Excel เปิดภาษาไทยถูก
-      return '\uFEFF' + lines.join('\r\n');
+      return '\uFEFF' + lines.join('\r\n'); // BOM for Thai in Excel
     }
     function downloadCSV(filename, content){
       const blob = new Blob([content], {type:'text/csv;charset=utf-8;'});
@@ -543,7 +549,6 @@
       setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
     }
     async function exportHistoryCSV(){
-      // ถ้าเพิ่งเปิดหน้าแล้วยังไม่กด Search เลย ให้โหลดก่อน 1 ครั้ง
       if(!loadHistory._lastRows){ await loadHistory(); }
       const rows = loadHistory._lastRows || [];
       if(rows.length === 0){
@@ -577,20 +582,21 @@
       html += '</tbody></table>';
       host.innerHTML = html;
     }
-    function renderDailyChart(points){
-      const canvas = document.getElementById('dailyChart');
+    function renderBarChart(canvasId, labels, values){
+      const canvas = document.getElementById(canvasId);
       const ctx = canvas.getContext('2d');
       ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(!points || points.length===0){ ctx.fillText('No data', 10, 20); return; }
+      if(!labels || labels.length===0){ ctx.fillText('No data', 10, 20); return; }
 
-      const m = {l:50, r:10, t:10, b:40};
+      const m = {l:60, r:10, t:10, b:80};
       const W = canvas.width - m.l - m.r;
       const H = canvas.height - m.t - m.b;
+      const maxY = Math.max(...values.map(v=>Number(v)||0), 10);
+      const n = labels.length;
+      const xStep = W / n;
+      const barW = Math.max(6, Math.min(40, xStep*0.6));
 
-      const maxY = Math.max(...points.map(p=>Number(p.qty)||0), 10);
-      const xStep = W / points.length;
-      const barW = Math.max(8, xStep * 0.6);
-
+      // axes
       ctx.strokeStyle = '#94a3b8';
       ctx.beginPath();
       ctx.moveTo(m.l, m.t);
@@ -598,6 +604,7 @@
       ctx.lineTo(m.l + W, m.t + H);
       ctx.stroke();
 
+      // y ticks
       ctx.fillStyle = '#64748b';
       ctx.font = '12px sans-serif';
       const ticks = 5;
@@ -612,23 +619,33 @@
         ctx.stroke();
       }
 
+      // bars
       ctx.fillStyle = '#1e88e5';
-      points.forEach((p,idx)=>{
-        const xCenter = m.l + xStep*idx + xStep/2;
-        const yVal = Number(p.qty)||0;
+      for(let i=0;i<n;i++){
+        const yVal = Number(values[i])||0;
         const h = (yVal / maxY) * H;
+        const xCenter = m.l + xStep*i + xStep/2;
         const x = xCenter - barW/2;
         const y = m.t + H - h;
         ctx.fillRect(x, y, barW, h);
-      });
+      }
 
+      // x labels (rotate)
+      ctx.save();
+      ctx.translate(0,0);
       ctx.fillStyle = '#64748b';
-      ctx.textAlign = 'center';
-      points.forEach((p,idx)=>{
-        const xCenter = m.l + xStep*idx + xStep/2;
-        ctx.fillText(p.date, xCenter, m.t + H + 16);
-      });
-      ctx.textAlign = 'left';
+      ctx.textAlign = 'right';
+      ctx.font = '11px sans-serif';
+      for(let i=0;i<n;i++){
+        const xCenter = m.l + xStep*i + xStep/2;
+        const label = labels[i];
+        ctx.save();
+        ctx.translate(xCenter, m.t + H + 6);
+        ctx.rotate(-Math.PI/4);
+        ctx.fillText(label, 0, 16);
+        ctx.restore();
+      }
+      ctx.restore();
     }
 
     async function loadDashboard(){
@@ -654,7 +671,18 @@
         renderTable('tblByEmployee', 'By Employee', data.byEmployee, ['Employee','Records','Qty']);
         renderTable('tblByShift', 'By Shift', data.byShift, ['Shift','Records','Qty']);
 
-        renderDailyChart(data.daily || []);
+        // Daily chart
+        renderBarChart('dailyChart', (data.daily||[]).map(d=>d.date), (data.daily||[]).map(d=>d.qty));
+
+        // Lot chart + table (Top 30 ตาม Qty)
+        const lots = data.byLot || [];
+        const topLots = lots.slice(0, 30);
+        renderBarChart('lotChart',
+          topLots.map(x=>`${x['Lot No.']}`),
+          topLots.map(x=>x.Qty)
+        );
+        renderTable('tblByLot', 'By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
+
         document.getElementById('dashMeta').textContent = `Range: ${data.range || '-'} | Records: ${numberFmt(data.totals.records)}`;
 
       }catch(err){
