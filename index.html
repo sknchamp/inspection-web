@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inspection System — MVP</title>
   <style>
-    :root{--bg1:#0b2a55;--bg2:#134b8a;--accent:#1e88e5;--accent-2:#90caf9;--ok:#1b5e20;--danger:#c62828;--card:#ffffff;--muted:#6b7280}
+    :root{--bg1:#0b2a55;--bg2:#134b8a;--accent:#1e88e5;--card:#ffffff;--muted:#6b7280;--danger:#c62828}
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100dvh;color:#0f172a;display:flex;align-items:center;justify-content:center}
     .container{width:min(1100px,95vw);}
     .card{background:var(--card);border-radius:20px;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
-    header{padding:28px 28px 18px;background:transparent;color:#e3f2fd;text-align:center}
+    header{padding:28px 28px 18px;color:#e3f2fd;text-align:center}
     header h1{margin:0;font-weight:700;font-size:clamp(20px,3.6vw,28px)}
     header p{margin:.35rem 0 0;color:#cfe8ff}
     .section{padding:20px clamp(16px,4vw,28px) 26px}
@@ -18,453 +18,393 @@
     .row-1{grid-template-columns:1fr}
     label{display:block;font-size:13px;color:#334155;margin:6px 2px}
     input,select,button,textarea{font:inherit}
-    input,select,textarea{width:100%;padding:12px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;outline:none;transition:border .15s,box-shadow .15s}
+    input,select,textarea{width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;outline:none}
     input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(30,136,229,.15)}
     .muted{color:var(--muted);font-size:12px}
-    .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer;transition:transform .06s ease,filter .15s}
-    .btn:active{transform:translateY(1px)}
+    .btn{border:0;border-radius:12px;padding:12px 14px;font-weight:600;cursor:pointer}
     .btn-primary{background:var(--accent);color:white}
-    .btn-primary:hover{filter:brightness(1.05)}
     .btn-ghost{background:transparent;color:var(--accent);border:1px dashed var(--accent)}
     .btn-danger{background:var(--danger);color:#fff}
-    .toolbar{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:10px}
+    .toolbar{display:flex;gap:10px;align-items:center;justify-content:flex-start;margin-top:10px;flex-wrap:wrap}
     .badge{background:#e8f2ff;color:#0b3a72;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:600}
-    table{width:100%;border-collapse:separate;border-spacing:0 10px}
-    th,td{padding:0}
-    .lot-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:center}
-    .lot-actions{display:flex;gap:8px;justify-content:flex-end}
-    .screen{display:none}
-    .screen.active{display:block}
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
-    .overlay.show{display:flex}
-    .modal{background:#fff;border-radius:16px;max-width:420px;width:100%;box-shadow:0 10px 35px rgba(0,0,0,.35);padding:22px}
-    .modal h3{margin:0 0 6px}
-    .modal p{margin:0 0 16px;color:#374151}
-    .modal .actions{display:flex;justify-content:flex-end;gap:10px}
+    .screen{display:none}.screen.active{display:block}
+    .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px}
     .login-hero{padding:28px;text-align:center;color:white}
     .login-hero h2{margin:0 0 6px;font-size:clamp(22px,6vw,30px)}
-    .login-hero p{margin:0;color:#cfe8ff}
-    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    .kpi .cardk{background:#f8fafc;border:1px solid #e5e7eb;border-radius:14px;padding:14px}
-    .kpi .title{font-size:12px;color:#64748b}
-    .kpi .value{font-size:22px;font-weight:700;margin-top:6px}
-    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px}
-    canvas{max-width:100%;height:320px}
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <header>
-        <h1>Inspection System</h1>
-        <p>Minimal Viable Frontend — GitHub Pages</p>
-      </header>
+<div class="container">
+  <div class="card">
+    <header>
+      <h1>Inspection System</h1>
+      <p>GitHub Pages + Google Apps Script</p>
+    </header>
 
-      <!-- Top Nav -->
-      <div class="section" style="padding-top:8px;padding-bottom:0">
-        <div class="toolbar" style="justify-content:flex-start;gap:8px">
-          <button class="btn btn-ghost" onclick="showScreen('screen-form')">➕ New Entry</button>
-          <button class="btn btn-ghost" onclick="openHistory()">📜 History / Search</button>
-          <button class="btn btn-ghost" onclick="openDashboard()">📊 Dashboard</button>
+    <!-- Top Nav -->
+    <div class="section" style="padding-top:8px;padding-bottom:0">
+      <div class="toolbar">
+        <button class="btn btn-ghost" onclick="showScreen('screen-form')">➕ New Entry</button>
+        <button id="btnHistory" class="btn btn-ghost" onclick="openHistory()" disabled>📜 History / Search</button>
+        <button id="btnDashboard" class="btn btn-ghost" onclick="openDashboard()" disabled>📊 Dashboard</button>
+        <span style="flex:1"></span>
+        <span id="loginBadge" class="badge"></span>
+        <button class="btn" onclick="onLogout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <section id="screen-login" class="section screen active">
+      <div class="login-hero">
+        <h2>🔐 Login</h2>
+        <p>เฉพาะผู้มีสิทธิ์เท่านั้นที่เข้าถึง History/Dashboard ได้</p>
+      </div>
+      <div class="row">
+        <div><label>Username</label><input id="login-username" placeholder="เช่น champ" autocomplete="username"/></div>
+        <div><label>Password</label><input id="login-password" type="password" placeholder="••••••" autocomplete="current-password"/></div>
+      </div>
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="doLogin()">Login</button>
+        <span class="muted">* สิทธิ์: operator / viewer / admin</span>
+      </div>
+    </section>
+
+    <!-- FORM -->
+    <section id="screen-form" class="section screen">
+      <div class="row">
+        <div><label>Employee</label><input id="employee" readonly /></div>
+        <div><label>Shift</label>
+          <select id="shift"><option value="A">A</option><option value="B">B</option></select>
         </div>
       </div>
 
-      <!-- LOGIN -->
-      <section id="screen-login" class="section screen active">
-        <div class="login-hero">
-          <h2>🔑 Login</h2>
-          <p>เข้าสู่ระบบเพื่อเริ่มบันทึกผลการตรวจ</p>
+      <div class="row">
+        <div>
+          <label>Part No.</label>
+          <input id="partNo" list="partNoList" placeholder="เช่น ABC-123" oninput="updatePartName()" onchange="updatePartName()" />
+          <datalist id="partNoList"></datalist>
         </div>
-        <div class="row">
-          <div><label>Username</label><input id="login-username" placeholder="เช่น champ" /></div>
-          <div><label>Password</label><input id="login-password" type="password" placeholder="••••••" /></div>
+        <div>
+          <label>Part Name</label>
+          <input id="partName" readonly tabindex="-1" onfocus="this.blur()" inputmode="none" style="background:#f8fafc;cursor:not-allowed" placeholder="ดึงจาก Part No."/>
         </div>
-        <div class="toolbar"><button class="btn btn-primary" onclick="onLogin()">Login</button></div>
-        <div class="section" style="padding-top:8px"><span class="muted">* MVP: เก็บชื่อผู้ใช้ในเครื่อง</span></div>
-      </section>
+      </div>
 
-      <!-- FORM -->
-      <section id="screen-form" class="section screen">
-        <div class="row">
-          <div><label>Employee</label><input id="employee" readonly /></div>
-          <div><label>Shift</label>
-            <select id="shift"><option value="A">A</option><option value="B">B</option></select>
-          </div>
-        </div>
+      <div style="margin-top:8px">
+        <label>Lots & Quantity</label>
+        <div id="lotTable"></div>
+        <div class="toolbar"><button class="btn btn-ghost" onclick="addLotRow()">+ Add Lot</button></div>
+      </div>
 
-        <div class="row">
-          <div>
-            <label>Part No.</label>
-            <input id="partNo" list="partNoList" placeholder="เช่น ABC-123" oninput="updatePartName()" onchange="updatePartName()" />
-            <datalist id="partNoList"></datalist>
-          </div>
-          <div>
-            <label>Part Name</label>
-            <input id="partName" readonly tabindex="-1" onfocus="this.blur()" inputmode="none" placeholder="จะเติมอัตโนมัติจาก Part No." style="background:#f8fafc;cursor:not-allowed" />
-          </div>
-        </div>
+      <div class="row row-1">
+        <div><label>Note</label><textarea id="note" rows="3" placeholder="OK/NG/Remark"></textarea></div>
+      </div>
 
-        <div style="margin-top:8px">
-          <label>Lots & Quantity</label>
-          <div id="lotTable"></div>
-          <div class="toolbar"><button class="btn btn-ghost" onclick="addLotRow()">+ Add Lot</button></div>
-        </div>
+      <div class="toolbar">
+        <button class="btn btn-primary" onclick="onSave()">Save</button>
+      </div>
+    </section>
 
-        <div class="row row-1">
-          <div><label>Note</label><textarea id="note" rows="3" placeholder="เช่น OK / NG / Remark"></textarea></div>
+    <!-- HISTORY -->
+    <section id="screen-history" class="section screen">
+      <div class="row">
+        <div><label>Start date</label><input type="date" id="hStart" /></div>
+        <div><label>End date</label><input type="date" id="hEnd" /></div>
+      </div>
+      <div class="row">
+        <div><label>Part No. (filter)</label><input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
+        <div><label>Employee (filter)</label><input id="hEmployee" placeholder="เช่น Champ" /></div>
+      </div>
+      <div class="toolbar" style="justify-content:space-between">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="resetHistoryFilters()">Reset</button>
+          <button class="btn btn-primary" onclick="loadHistory()">Search</button>
+          <button class="btn btn-ghost" onclick="exportHistoryCSV()">Export CSV</button>
         </div>
+        <div><span class="muted" id="historyMeta"></span></div>
+      </div>
+      <div style="margin-top:14px"><div id="historyTable" class="table-wrap"></div></div>
+      <div class="toolbar" style="justify-content:flex-end"><button class="btn" onclick="showScreen('screen-form')">Back to Form</button></div>
+    </section>
 
-        <div class="toolbar">
-          <span id="loginBadge" class="badge"></span>
-          <button class="btn" onclick="onLogout()">Logout</button>
-          <button class="btn btn-primary" onclick="onSave()">Save</button>
+    <!-- DASHBOARD -->
+    <section id="screen-dashboard" class="section screen">
+      <div class="row">
+        <div><label>Start date</label><input type="date" id="dStart" /></div>
+        <div><label>End date</label><input type="date" id="dEnd" /></div>
+      </div>
+      <div class="row">
+        <div><label>Part No. (filter)</label><input id="dPartNo" list="partNoList" /></div>
+        <div><label>Employee (filter)</label><input id="dEmployee" /></div>
+      </div>
+      <div class="toolbar" style="justify-content:space-between">
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" onclick="resetDashboardFilters()">Reset</button>
+          <button class="btn btn-primary" onclick="loadDashboard()">Update</button>
         </div>
-      </section>
+        <div><span class="muted" id="dashMeta"></span></div>
+      </div>
 
-      <!-- HISTORY -->
-      <section id="screen-history" class="section screen">
-        <div class="row">
-          <div><label>Start date</label><input type="date" id="hStart" /></div>
-          <div><label>End date</label><input type="date" id="hEnd" /></div>
-        </div>
-        <div class="row">
-          <div><label>Part No. (filter)</label><input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
-          <div><label>Employee (filter)</label><input id="hEmployee" placeholder="เช่น Champ" /></div>
-        </div>
-        <div class="toolbar" style="justify-content:space-between">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" onclick="resetHistoryFilters()">Reset</button>
-            <button class="btn btn-primary" onclick="loadHistory()">Search</button>
-            <button class="btn btn-ghost" onclick="exportHistoryCSV()">Export CSV</button>
-          </div>
-          <div><span class="muted" id="historyMeta"></span></div>
-        </div>
-        <div style="margin-top:14px"><div id="historyTable" class="table-wrap"></div></div>
-        <div class="toolbar" style="justify-content:flex-end"><button class="btn" onclick="showScreen('screen-form')">Back to Form</button></div>
-      </section>
-
-      <!-- DASHBOARD -->
-      <section id="screen-dashboard" class="section screen">
-        <div class="row">
-          <div><label>Start date</label><input type="date" id="dStart" /></div>
-          <div><label>End date</label><input type="date" id="dEnd" /></div>
-        </div>
-        <div class="row">
-          <div><label>Part No. (filter)</label><input id="dPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
-          <div><label>Employee (filter)</label><input id="dEmployee" placeholder="เช่น Champ" /></div>
-        </div>
-        <div class="toolbar" style="justify-content:space-between">
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn" onclick="resetDashboardFilters()">Reset</button>
-            <button class="btn btn-primary" onclick="loadDashboard()">Update</button>
-          </div>
-          <div><span class="muted" id="dashMeta"></span></div>
-        </div>
-
-        <div class="kpi" style="margin-top:14px">
-          <div class="cardk"><div class="title">Total Records</div><div class="value" id="kpiRecords">-</div></div>
-          <div class="cardk"><div class="title">Total Quantity</div><div class="value" id="kpiQty">-</div></div>
-          <div class="cardk"><div class="title">Unique Parts</div><div class="value" id="kpiParts">-</div></div>
-          <div class="cardk"><div class="title">Employees</div><div class="value" id="kpiEmployees">-</div></div>
-        </div>
-
-        <div class="grid-2" style="margin-top:16px">
-          <div class="table-wrap" id="tblByPart"></div>
-          <div class="table-wrap" id="tblByEmployee"></div>
-        </div>
-
-        <div style="margin-top:16px" class="table-wrap" id="tblByShift"></div>
-
-        <div class="grid-2" style="margin-top:16px">
-          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
-            <div class="muted" style="margin-bottom:6px">Daily Quantity</div>
-            <canvas id="dailyChart" width="900" height="320"></canvas>
-          </div>
-          <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:12px">
-            <div class="muted" style="margin-bottom:6px">Top Lots by Quantity</div>
-            <canvas id="lotChart" width="900" height="320"></canvas>
-          </div>
-        </div>
-
-        <div style="margin-top:16px" class="table-wrap" id="tblByLot"></div>
-
-        <div class="toolbar" style="justify-content:flex-end;margin-top:10px">
-          <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
-        </div>
-      </section>
-
-    </div>
+      <div class="table-wrap" id="tblByPart" style="margin-top:14px"></div>
+      <div class="table-wrap" id="tblByEmployee" style="margin-top:14px"></div>
+      <div class="table-wrap" id="tblByShift" style="margin-top:14px"></div>
+      <div class="table-wrap" id="tblByLot" style="margin-top:14px"></div>
+    </section>
   </div>
+</div>
 
-  <!-- Modal -->
-  <div id="overlay" class="overlay" role="dialog" aria-modal="true">
-    <div class="modal">
-      <h3 id="modalTitle">Message</h3>
-      <p id="modalBody">รายละเอียดข้อความ</p>
-      <div class="actions"><button class="btn" onclick="closeModal()">OK</button></div>
-    </div>
-  </div>
+<script>
+  const API_URL = "https://script.google.com/macros/s/AKfycbxzJ9aO_GNv1Y6hJJ2NipqWw6QTmbA0vsBPKg3RWBRaFETcDzLbpmuluqIxEyVIGm9n/exec"; // ลงท้าย /exec
+  const el = id => document.getElementById(id);
+  const bust = ()=>'_='+Date.now();
+  const withBust = url => url + (url.includes('?')?'&':'?') + bust();
 
-  <script>
-    // ---------- Helpers ----------
-    const API_URL = "https://script.google.com/macros/s/AKfycbxzJ9aO_GNv1Y6hJJ2NipqWw6QTmbA0vsBPKg3RWBRaFETcDzLbpmuluqIxEyVIGm9n/exec"; // ลงท้าย /exec
-    const el = (id) => document.getElementById(id);
+  // ---- Auth state ----
+  function getAuth(){ try{ return JSON.parse(localStorage.getItem('auth')||'{}'); }catch(_){ return {}; } }
+  function setAuth(a){ localStorage.setItem('auth', JSON.stringify(a||{})); }
+  function clearAuth(){ localStorage.removeItem('auth'); }
 
-    let PARTS = {};
-    let PARTS_LC = {};
-    const normalizeKey = s => (s||'').toString().trim().toLowerCase();
+  function applyRoleUI(){
+    const auth = getAuth();
+    const role = (auth.role||'').toLowerCase();
+    el('loginBadge').textContent = auth.username ? `Logged in as: ${auth.username} (${role||'-'})` : '';
+    const canView = role === 'viewer' || role === 'admin';
+    el('btnHistory').disabled = !canView;
+    el('btnDashboard').disabled = !canView;
+  }
 
-    // Date helpers: d-M-yy
-    function parseYMD(s){
-      if(!s) return null;
-      if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
-      const t = new Date(s); return isNaN(t) ? null : t;
-    }
-    function fmtShortDMY(dLike){
-      const d = dLike instanceof Date ? dLike : parseYMD(dLike);
-      if(!d) return '';
-      const dd = d.getDate();
-      const mm = d.getMonth()+1;
-      const yy = String(d.getFullYear()).slice(-2);
-      return `${dd}-${mm}-${yy}`;
-    }
-    function shortIfDate(v){ const s=fmtShortDMY(v); return s || v || ''; }
+  // ---- Date helpers (short) ----
+  function parseYMD(s){ if(!s) return null; if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); } const t=new Date(s); return isNaN(t)?null:t; }
+  function fmtShortDMY(dLike){ const d = dLike instanceof Date ? dLike : parseYMD(dLike); if(!d) return ''; return `${d.getDate()}-${d.getMonth()+1}-${String(d.getFullYear()).slice(-2)}`; }
+  function shortIfDate(v){ const s=fmtShortDMY(v); return s|| (v??''); }
+  function numberFmt(n){ return (n==null||n==='')?'-':new Intl.NumberFormat().format(n); }
 
-    // cache-buster
-    const bust = () => `_=${Date.now()}`;
-    const withBust = url => url + (url.includes('?') ? '&' : '?') + bust();
-
-    // ---------- Views / Modal ----------
-    function showScreen(id){
-      document.querySelectorAll('.screen').forEach(elm=>elm.classList.remove('active'));
-      el(id).classList.add('active');
-    }
-    function showModal(t,b){ el('modalTitle').textContent=t; el('modalBody').textContent=b; el('overlay').classList.add('show'); }
-    function closeModal(){ el('overlay').classList.remove('show'); }
-
-    // ---------- Load PART list ----------
-    async function loadParts(){
-      try{
-        const resp = await fetch(withBust(API_URL + '?action=parts'));
-        const data = await resp.json().catch(()=>({ok:false}));
-        if(!data.ok) return;
-        PARTS = {}; PARTS_LC = {};
-        (data.parts||[]).forEach(p=>{
-          if(p && p.partNo){
-            PARTS[String(p.partNo)] = String(p.partName||'');
-            PARTS_LC[normalizeKey(p.partNo)] = String(p.partName||'');
-          }
-        });
-        const dl = el('partNoList'); dl.innerHTML='';
-        Object.keys(PARTS).forEach(k=>{ const opt=document.createElement('option'); opt.value=k; dl.appendChild(opt); });
-      }catch(e){ console.warn(e); }
-    }
-
-    // ---------- Login ----------
-    function onLogin(){
-      const u = el('login-username').value.trim();
-      if(!u) return showModal('Login failed','กรุณากรอก Username');
-      localStorage.setItem('loggedUser', u);
-      el('employee').value = u;
-      el('loginBadge').textContent = `Logged in as: ${u}`;
+  // ---- Login / Logout ----
+  async function doLogin(){
+    try{
+      const username = el('login-username').value.trim();
+      const password = el('login-password').value;
+      if(!username || !password){ alert('กรอก Username/Password'); return; }
+      const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'login', username, password }) });
+      const data = await resp.json();
+      if(!data.ok){ alert('Login failed: ' + (data.error||'')); return; }
+      setAuth({ token: data.token, username: data.user.username, role: data.user.role });
+      el('employee').value = data.user.username;
+      el('login-username').value=''; el('login-password').value='';
+      applyRoleUI();
+      await loadParts(); // ต้องดึง parts หลัง login เพราะต้องใช้ token
       showScreen('screen-form');
+    }catch(err){ alert('Login error: ' + err); }
+  }
+  function onLogout(){
+    const { token } = getAuth();
+    clearAuth();
+    applyRoleUI();
+    showScreen('screen-login');
+    // (optional) แจ้ง backend ทำลาย token
+    if(token){ fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'logout', token }) }).catch(()=>{}); }
+  }
+
+  // ---- Screens ----
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+    el(id).classList.add('active');
+  }
+  function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded=true; } }
+  function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded=true; } }
+  function resetHistoryFilters(){ el('hStart').value=''; el('hEnd').value=''; el('hPartNo').value=''; el('hEmployee').value=''; }
+  function resetDashboardFilters(){ el('dStart').value=''; el('dEnd').value=''; el('dPartNo').value=''; el('dEmployee').value=''; }
+
+  // ---- Parts ----
+  let PARTS = {}, PARTS_LC = {};
+  const normalizeKey = s => (s||'').toString().trim().toLowerCase();
+
+  async function loadParts(){
+    try{
+      const { token } = getAuth();
+      if(!token) return;
+      const url = `${API_URL}?action=parts&token=${encodeURIComponent(token)}`;
+      const resp = await fetch(withBust(url));
+      const data = await resp.json();
+      if(!data.ok){ console.warn('parts error', data.error); return; }
+      PARTS = {}; PARTS_LC = {};
+      (data.parts||[]).forEach(p=>{
+        PARTS[String(p.partNo)] = String(p.partName||'');
+        PARTS_LC[normalizeKey(p.partNo)] = String(p.partName||'');
+      });
+      const dl = el('partNoList'); dl.innerHTML='';
+      Object.keys(PARTS).forEach(k=>{ const o=document.createElement('option'); o.value=k; dl.appendChild(o); });
+    }catch(e){ console.warn(e); }
+  }
+  function updatePartName(){
+    const pn = el('partNo').value.trim();
+    el('partName').value = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
+  }
+
+  // ---- Lots ----
+  function lotRowTemplate(i){ return `<div class="lot-row" data-index="${i}">
+    <input placeholder="Lot No." class="lot-no" />
+    <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
+    <div class="lot-actions"><button class="btn btn-danger" onclick="removeLotRow(${i})">Remove</button></div>
+  </div>`;}
+  let lotIndex=0;
+  function addLotRow(){ const d=document.createElement('div'); d.innerHTML=lotRowTemplate(++lotIndex); el('lotTable').appendChild(d.firstElementChild); }
+  function removeLotRow(i){ const row=document.querySelector(`.lot-row[data-index="${i}"]`); if(row) row.remove(); }
+  function clearLots(){ el('lotTable').innerHTML=''; lotIndex=0; addLotRow(); }
+
+  // ---- Save ----
+  async function onSave(){
+    try{
+      const auth = getAuth();
+      if(!auth.token){ alert('กรุณา Login ก่อน'); return; }
+      const employee = el('employee').value.trim();
+      const partNo = el('partNo').value.trim();
+      const partName = el('partName').value.trim();
+      const shift = el('shift').value;
+      const note = el('note').value.trim();
+      const userId = employee ? employee.toLowerCase().replace(/\s+/g,'') : '';
+
+      const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
+        lotNo: r.querySelector('.lot-no').value.trim(),
+        quantity: Number(r.querySelector('.lot-qty').value||'0')
+      })).filter(x=>x.lotNo);
+
+      if(!employee || !partNo || lots.length===0){ alert('กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity'); return; }
+      if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){ alert('Part No. นี้ไม่มีในรายการ'); return; }
+
+      const payload = { token: auth.token, employee, userId, partNo, partName, shift, note, lots };
+      const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
+      const data = await resp.json();
+      if(!data.ok){ alert('Save failed: ' + (data.error||'')); return; }
+
+      alert('Saved!');
+      el('partNo').value=''; el('partName').value=''; el('note').value=''; clearLots();
+    }catch(err){ alert('Save error: ' + err); }
+  }
+
+  // ---- History ----
+  function renderHistoryTable(rows){
+    const host = el('historyTable');
+    if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
+    let html = '<table style="width:100%"><thead><tr style="text-align:left">'
+      + '<th style="padding:10px">Date</th>'
+      + '<th style="padding:10px">Employee</th>'
+      + '<th style="padding:10px">Part No.</th>'
+      + '<th style="padding:10px">Part Name</th>'
+      + '<th style="padding:10px">Lot No.</th>'
+      + '<th style="padding:10px;text-align:right">Qty</th>'
+      + '<th style="padding:10px">Shift</th>'
+      + '<th style="padding:10px">Note</th>'
+      + '</tr></thead><tbody>';
+    for(const r of rows){
+      const d = shortIfDate(r.Timestamp);
+      const lot = shortIfDate(r['Lot No.']);
+      html += '<tr>'
+        + `<td style="padding:8px;white-space:nowrap">${d}</td>`
+        + `<td style="padding:8px">${r.Employee||''}</td>`
+        + `<td style="padding:8px">${r['Part No.']||''}</td>`
+        + `<td style="padding:8px">${r['Part Name']||''}</td>`
+        + `<td style="padding:8px">${lot}</td>`
+        + `<td style="padding:8px;text-align:right">${r.Quantity??''}</td>`
+        + `<td style="padding:8px">${r.Shift||''}</td>`
+        + `<td style="padding:8px">${r.Note||''}</td>`
+        + '</tr>';
     }
-    function onLogout(){
-      localStorage.removeItem('loggedUser');
-      el('login-username').value='';
-      el('login-password').value='';
+    html += '</tbody></table>';
+    host.innerHTML = html;
+  }
+  async function loadHistory(){
+    try{
+      const { token } = getAuth();
+      if(!token){ alert('ต้อง Login ก่อน'); return; }
+      const q = new URLSearchParams({
+        action:'history',
+        token,
+        start: el('hStart').value || '',
+        end: el('hEnd').value || '',
+        partNo: el('hPartNo').value.trim(),
+        employee: el('hEmployee').value.trim(),
+        limit: '2000'
+      });
+      const resp = await fetch(withBust(API_URL + '?' + q.toString()));
+      const data = await resp.json();
+      if(!data.ok){ el('historyMeta').textContent='Error'; alert(data.error||'Load failed'); return; }
+      el('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
+      renderHistoryTable(data.rows);
+      loadHistory._rows = data.rows;
+    }catch(err){ alert('Load error: ' + err); }
+  }
+  function toCSVShortDate(rows){
+    if(!rows || rows.length===0) return '';
+    const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
+    const esc = v=>{ const s=(v==null)?'':String(v).replace(/"/g,'""'); return /[",\n]/.test(s)?`"${s}"`:s; };
+    const lines=[headers.join(',')];
+    for(const r of rows){
+      const row = [ shortIfDate(r.Timestamp), r.Employee, r['Part No.'], r['Part Name'], shortIfDate(r['Lot No.']), r.Quantity, r.Shift, r.Note ];
+      lines.push(row.map(esc).join(','));
+    }
+    return '\uFEFF' + lines.join('\r\n');
+  }
+  async function exportHistoryCSV(){
+    if(!loadHistory._rows) await loadHistory();
+    const rows = loadHistory._rows || [];
+    if(rows.length===0){ alert('ไม่มีข้อมูลให้ส่งออก'); return; }
+    const start = el('hStart').value ? fmtShortDMY(el('hStart').value) : 'all';
+    const end   = el('hEnd').value ? fmtShortDMY(el('hEnd').value) : 'all';
+    const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
+  }
+
+  // ---- Dashboard ----
+  function renderTable(containerId, title, rows, cols){
+    const host=el(containerId);
+    if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
+    let html=`<div class="muted" style="padding:8px 12px">${title}</div><table style="width:100%"><thead><tr style="text-align:left">`;
+    cols.forEach(c=>html+=`<th style="padding:10px">${c}</th>`); html+='</tr></thead><tbody>';
+    rows.forEach(r=>{ html+='<tr>'; cols.forEach(c=>{ const v=(c==='Lot No.')?shortIfDate(r[c]):r[c]; const pr=(/qty|records/i.test(c)?'text-align:right':''); html+=`<td style="padding:8px;${pr}">${v??''}</td>`; }); html+='</tr>'; });
+    html+='</tbody></table>'; host.innerHTML=html;
+  }
+  async function loadDashboard(){
+    try{
+      const { token } = getAuth();
+      if(!token){ alert('ต้อง Login ก่อน'); return; }
+      const q = new URLSearchParams({
+        action:'dashboard',
+        token,
+        start: el('dStart').value || '',
+        end: el('dEnd').value || '',
+        partNo: el('dPartNo').value.trim(),
+        employee: el('dEmployee').value.trim()
+      });
+      const resp = await fetch(withBust(API_URL + '?' + q.toString()));
+      const data = await resp.json();
+      if(!data.ok){ el('dashMeta').textContent='Error'; alert(data.error||'Load failed'); return; }
+
+      renderTable('tblByPart','By Part',data.byPart,['Part No.','Part Name','Records','Qty']);
+      renderTable('tblByEmployee','By Employee',data.byEmployee,['Employee','Records','Qty']);
+      renderTable('tblByShift','By Shift',data.byShift,['Shift','Records','Qty']);
+      renderTable('tblByLot','By Lot (Top 100)', (data.byLot||[]).slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
+
+      const rangeText = (el('dStart').value||el('dEnd').value) ? `${el('dStart').value?fmtShortDMY(el('dStart').value):'...'} → ${el('dEnd').value?fmtShortDMY(el('dEnd').value):'...'}` : 'All time';
+      el('dashMeta').textContent = `Range: ${rangeText} | Records: ${numberFmt(data.totals.records)}`;
+    }catch(err){ alert('Dashboard error: ' + err); }
+  }
+
+  // ---- Init ----
+  (async function init(){
+    applyRoleUI();
+    const auth = getAuth();
+    if(auth && auth.token){
+      el('employee').value = auth.username || '';
+      await loadParts();
+      showScreen('screen-form');
+    } else {
       showScreen('screen-login');
     }
-
-    // ---------- Form: Part link ----------
-    function updatePartName(){
-      const pn = el('partNo').value.trim();
-      el('partName').value = PARTS[pn] || PARTS_LC[normalizeKey(pn)] || '';
-    }
-
-    // ---------- Lots ----------
-    function lotRowTemplate(i){ return `<div class="lot-row" data-index="${i}">
-      <input placeholder="Lot No." class="lot-no" />
-      <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
-      <div class="lot-actions"><button class="btn btn-danger" onclick="removeLotRow(${i})">Remove</button></div>
-    </div>`;}
-    let lotIndex=0;
-    function addLotRow(){ const div=document.createElement('div'); div.innerHTML=lotRowTemplate(++lotIndex); el('lotTable').appendChild(div.firstElementChild); }
-    function removeLotRow(i){ const row=document.querySelector(`.lot-row[data-index="${i}"]`); if(row) row.remove(); }
-    function clearLots(){ el('lotTable').innerHTML=''; lotIndex=0; addLotRow(); }
-
-    // ---------- Save ----------
-    async function onSave(){
-      try{
-        const employeeName = el('employee').value.trim();
-        const pn = el('partNo').value.trim();
-        const pnName = el('partName').value.trim();
-        const shiftVal = el('shift').value;
-        const noteVal = el('note').value.trim();
-        const userId = employeeName ? employeeName.toLowerCase().replace(/\s+/g,'') : '';
-
-        const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
-          lotNo: r.querySelector('.lot-no').value.trim(),
-          quantity: Number(r.querySelector('.lot-qty').value||'0')
-        })).filter(x=>x.lotNo);
-
-        if(!employeeName || !pn || lots.length===0) return showModal('Invalid form','กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
-        if(!(PARTS[pn] || PARTS_LC[normalizeKey(pn)])) return showModal('Invalid Part','Part No. นี้ไม่มีในรายการ');
-
-        const payload = { employee: employeeName, userId, partNo: pn, partName: pnName, shift: shiftVal, note: noteVal, lots };
-        const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
-        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON response'}));
-        if(!data.ok) return showModal('Save failed', data.error||'Unknown error');
-
-        showModal('Saved successfully!','ข้อมูลถูกบันทึกเรียบร้อยแล้ว');
-        el('partNo').value=''; el('partName').value=''; el('note').value=''; clearLots();
-      }catch(err){ showModal('Save failed', String(err)); }
-    }
-
-    // ---------- Common helpers ----------
-    function buildQuery(p){ const u=new URLSearchParams(); Object.entries(p).forEach(([k,v])=>{ if(v!=null && v!=='') u.set(k,v); }); return u.toString(); }
-    function numberFmt(n){ return (n==null||n==='') ? '-' : new Intl.NumberFormat().format(n); }
-
-    // ---------- History ----------
-    function renderHistoryTable(rows){
-      const host = el('historyTable');
-      if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
-      let html = '<table style="width:100%"><thead><tr style="text-align:left">'
-        + '<th style="padding:10px">Date</th>'
-        + '<th style="padding:10px">Employee</th>'
-        + '<th style="padding:10px">Part No.</th>'
-        + '<th style="padding:10px">Part Name</th>'
-        + '<th style="padding:10px">Lot No.</th>'
-        + '<th style="padding:10px;text-align:right">Qty</th>'
-        + '<th style="padding:10px">Shift</th>'
-        + '<th style="padding:10px">Note</th>'
-        + '</tr></thead><tbody>';
-      for(const r of rows){
-        const shortDate = shortIfDate(r.Timestamp);
-        const lotShort  = shortIfDate(r['Lot No.']);   // <<---- ทำให้ Lot No. เป็น d-M-yy
-        html += '<tr>'
-          + `<td style="padding:8px;white-space:nowrap">${shortDate}</td>`
-          + `<td style="padding:8px">${r.Employee||''}</td>`
-          + `<td style="padding:8px">${r['Part No.']||''}</td>`
-          + `<td style="padding:8px">${r['Part Name']||''}</td>`
-          + `<td style="padding:8px">${lotShort}</td>`
-          + `<td style="padding:8px;text-align:right">${r.Quantity??''}</td>`
-          + `<td style="padding:8px">${r.Shift||''}</td>`
-          + `<td style="padding:8px">${r.Note||''}</td>`
-          + '</tr>';
-      }
-      html += '</tbody></table>';
-      host.innerHTML = html;
-    }
-    async function loadHistory(){
-      const p = { action:'history', start:el('hStart').value, end:el('hEnd').value, partNo:el('hPartNo').value.trim(), employee:el('hEmployee').value.trim(), limit:2000 };
-      try{
-        const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
-        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ el('historyMeta').textContent='Error'; return showModal('Load failed', data.error||'Unknown error'); }
-        el('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
-        renderHistoryTable(data.rows);
-        loadHistory._lastRows = data.rows || [];
-      }catch(err){ showModal('Load failed', String(err)); }
-    }
-    function resetHistoryFilters(){ el('hStart').value=''; el('hEnd').value=''; el('hPartNo').value=''; el('hEmployee').value=''; }
-
-    // CSV (Date & Lot No. เป็น d-M-yy)
-    function toCSVShortDate(rows){
-      if(!rows || rows.length===0) return '';
-      const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
-      const esc = v=>{ const s=(v==null)?'':String(v).replace(/"/g,'""'); return /[",\n]/.test(s)?`"${s}"`:s; };
-      const lines=[headers.join(',')];
-      for(const r of rows){
-        const dateShort = shortIfDate(r.Timestamp);
-        const lotShort  = shortIfDate(r['Lot No.']);     // <<---- CSV ก็สั้น
-        const row = [dateShort, r.Employee, r['Part No.'], r['Part Name'], lotShort, r.Quantity, r.Shift, r.Note];
-        lines.push(row.map(esc).join(','));
-      }
-      return '\uFEFF' + lines.join('\r\n');
-    }
-    async function exportHistoryCSV(){
-      if(!loadHistory._lastRows){ await loadHistory(); }
-      const rows=loadHistory._lastRows||[];
-      if(rows.length===0) return showModal('Export CSV','ไม่มีข้อมูลให้ส่งออก (กรุณากด Search ก่อน)');
-      const start = el('hStart').value ? shortIfDate(el('hStart').value) : 'all';
-      const end   = el('hEnd').value ? shortIfDate(el('hEnd').value)   : 'all';
-      const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
-      setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
-    }
-
-    // ---------- Dashboard ----------
-    function renderTable(containerId, title, rows, cols){
-      const host=el(containerId);
-      if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
-      let html=`<div class="muted" style="padding:8px 12px">${title}</div><table style="width:100%"><thead><tr style="text-align:left">`;
-      cols.forEach(c=>html+=`<th style="padding:10px">${c}</th>`); html+='</tr></thead><tbody>';
-      rows.forEach(r=>{ html+='<tr>'; cols.forEach(c=>{ const v=r[c]; const pr=(/qty|records/i.test(c)?'text-align:right':''); html+=`<td style="padding:8px;${pr}">${v??''}</td>`; }); html+='</tr>'; });
-      html+='</tbody></table>'; host.innerHTML=html;
-    }
-    function renderBarChart(canvasId, labels, values){
-      const canvas=el(canvasId), ctx=canvas.getContext('2d');
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      if(!labels || labels.length===0){ ctx.fillText('No data',10,20); return; }
-      const m={l:60,r:10,t:10,b:80}, W=canvas.width-m.l-m.r, H=canvas.height-m.t-m.b;
-      const maxY=Math.max(...values.map(v=>Number(v)||0),10), n=labels.length, xStep=W/n, barW=Math.max(6,Math.min(40,xStep*0.6));
-      ctx.strokeStyle='#94a3b8'; ctx.beginPath(); ctx.moveTo(m.l,m.t); ctx.lineTo(m.l,m.t+H); ctx.lineTo(m.l+W,m.t+H); ctx.stroke();
-      ctx.fillStyle='#64748b'; ctx.font='12px sans-serif'; const ticks=5;
-      for(let i=0;i<=ticks;i++){ const yVal=Math.round(maxY*(i/ticks)), y=m.t+H-(yVal/maxY)*H; ctx.fillText(numberFmt(yVal),8,y+4); ctx.strokeStyle='#e2e8f0'; ctx.beginPath(); ctx.moveTo(m.l,y); ctx.lineTo(m.l+W,y); ctx.stroke(); }
-      ctx.fillStyle='#1e88e5';
-      for(let i=0;i<n;i++){ const yVal=Number(values[i])||0, h=(yVal/maxY)*H, xCenter=m.l+xStep*i+xStep/2, x=xCenter-barW/2, y=m.t+H-h; ctx.fillRect(x,y,barW,h); }
-      ctx.save(); ctx.fillStyle='#64748b'; ctx.textAlign='right'; ctx.font='11px sans-serif';
-      for(let i=0;i<n;i++){ const xCenter=m.l+xStep*i+xStep/2, label=labels[i]; ctx.save(); ctx.translate(xCenter,m.t+H+6); ctx.rotate(-Math.PI/4); ctx.fillText(label,0,16); ctx.restore(); }
-      ctx.restore();
-    }
-    async function loadDashboard(){
-      const p={ action:'dashboard', start:el('dStart').value, end:el('dEnd').value, partNo:el('dPartNo').value.trim(), employee:el('dEmployee').value.trim() };
-      try{
-        const resp = await fetch(withBust(API_URL + '?' + buildQuery(p)));
-        const data = await resp.json().catch(()=>({ok:false,error:'Invalid JSON'}));
-        if(!data.ok){ el('dashMeta').textContent='Error'; return showModal('Dashboard error', data.error||'Unknown'); }
-
-        el('kpiRecords').textContent=numberFmt(data.totals.records);
-        el('kpiQty').textContent=numberFmt(data.totals.totalQty);
-        el('kpiParts').textContent=numberFmt(data.totals.uniqueParts);
-        el('kpiEmployees').textContent=numberFmt(data.totals.employees);
-
-        renderTable('tblByPart','By Part',data.byPart,['Part No.','Part Name','Records','Qty']);
-        renderTable('tblByEmployee','By Employee',data.byEmployee,['Employee','Records','Qty']);
-        renderTable('tblByShift','By Shift',data.byShift,['Shift','Records','Qty']);
-
-        const dailyLabels = (data.daily||[]).map(d=>fmtShortDMY(d.date));
-        const dailyValues = (data.daily||[]).map(d=>d.qty);
-        renderBarChart('dailyChart', dailyLabels, dailyValues);
-
-        // --- By Lot: ทำให้ป้ายชื่อและตารางเป็น d-M-yy ถ้าเป็นวันที่ ---
-        const lots = (data.byLot||[]).map(x=>({
-          ...x,
-          'Lot No.': shortIfDate(x['Lot No.'])
-        }));
-        const topLots = lots.slice(0,30);
-        renderBarChart('lotChart', topLots.map(x=>String(x['Lot No.']||'')), topLots.map(x=>x.Qty));
-        renderTable('tblByLot','By Lot (Top 100)', lots.slice(0,100), ['Lot No.','Part No.','Part Name','Records','Qty']);
-
-        const rangeText = (el('dStart').value||el('dEnd').value) ? `${el('dStart').value?fmtShortDMY(el('dStart').value):'...'} → ${el('dEnd').value?fmtShortDMY(el('dEnd').value):'...'}` : 'All time';
-        el('dashMeta').textContent = `Range: ${rangeText} | Records: ${numberFmt(data.totals.records)}`;
-      }catch(err){ showModal('Dashboard error', String(err)); }
-    }
-    function openHistory(){ showScreen('screen-history'); if(!openHistory._loaded){ loadHistory(); openHistory._loaded=true; } }
-    function openDashboard(){ showScreen('screen-dashboard'); if(!openDashboard._loaded){ loadDashboard(); openDashboard._loaded=true; } }
-    function resetDashboardFilters(){ el('dStart').value=''; el('dEnd').value=''; el('dPartNo').value=''; el('dEmployee').value=''; }
-
-    // ---------- init ----------
-    (async function init(){
-      await loadParts();
-      const u=localStorage.getItem('loggedUser');
-      if(u){ el('employee').value=u; el('loginBadge').textContent=`Logged in as: ${u}`; showScreen('screen-form'); }
-      else { showScreen('screen-login'); }
-      clearLots();
-    })();
-  </script>
+    clearLots();
+  })();
+</script>
 </body>
 </html>
