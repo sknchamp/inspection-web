@@ -31,6 +31,7 @@
     .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:12px}
     .login-hero{padding:28px;text-align:center;color:white}
     .login-hero h2{margin:0 0 6px;font-size:clamp(22px,6vw,30px)}
+    .lot-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-top:8px}
   </style>
 </head>
 <body>
@@ -80,14 +81,23 @@
 
       <div class="row">
         <div>
+          <label>Inspect Date</label>
+          <input type="date" id="inspectDate" />
+          <span class="muted">ไม่เลือก = วันนี้ | ไม่ให้เลือกวันอนาคต</span>
+        </div>
+        <div>
           <label>Part No.</label>
           <input id="partNo" list="partNoList" placeholder="เช่น ABC-123" oninput="updatePartName()" onchange="updatePartName()" />
           <datalist id="partNoList"></datalist>
         </div>
+      </div>
+
+      <div class="row">
         <div>
           <label>Part Name</label>
           <input id="partName" readonly tabindex="-1" onfocus="this.blur()" inputmode="none" style="background:#f8fafc;cursor:not-allowed" placeholder="ดึงจาก Part No."/>
         </div>
+        <div></div>
       </div>
 
       <div style="margin-top:8px">
@@ -173,7 +183,11 @@
     el('btnDashboard').disabled = !canView;
   }
 
-  // ---- Date helpers (short) ----
+  // ---- Date helpers ----
+  function todayISO(){
+    const now=new Date(); const pad=n=>String(n).padStart(2,'0');
+    return `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+  }
   function parseYMD(s){ if(!s) return null; if(/^\d{4}-\d{2}-\d{2}$/.test(s)){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); } const t=new Date(s); return isNaN(t)?null:t; }
   function fmtShortDMY(dLike){ const d = dLike instanceof Date ? dLike : parseYMD(dLike); if(!d) return ''; return `${d.getDate()}-${d.getMonth()+1}-${String(d.getFullYear()).slice(-2)}`; }
   function shortIfDate(v){ const s=fmtShortDMY(v); return s|| (v??''); }
@@ -201,7 +215,6 @@
     clearAuth();
     applyRoleUI();
     showScreen('screen-login');
-    // (optional) แจ้ง backend ทำลาย token
     if(token){ fetch(API_URL, { method:'POST', body: JSON.stringify({ action:'logout', token }) }).catch(()=>{}); }
   }
 
@@ -243,8 +256,8 @@
 
   // ---- Lots ----
   function lotRowTemplate(i){ return `<div class="lot-row" data-index="${i}">
-    <input placeholder="Lot No." class="lot-no" />
-    <input type="number" min="0" step="1" placeholder="Qty" class="lot-qty" />
+    <input placeholder="Lot No." class="lot-no" required />
+    <input type="number" min="1" step="1" placeholder="Qty" class="lot-qty" required />
     <div class="lot-actions"><button class="btn btn-danger" onclick="removeLotRow(${i})">Remove</button></div>
   </div>`;}
   let lotIndex=0;
@@ -264,21 +277,29 @@
       const note = el('note').value.trim();
       const userId = employee ? employee.toLowerCase().replace(/\s+/g,'') : '';
 
+      // Inspect Date: YYYY-MM-DD
+      const today = todayISO();
+      const inspectDate = el('inspectDate').value || today;
+      if (inspectDate > today) { alert('ห้ามเลือกวันที่อนาคต'); return; }
+
       const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
         lotNo: r.querySelector('.lot-no').value.trim(),
         quantity: Number(r.querySelector('.lot-qty').value||'0')
-      })).filter(x=>x.lotNo);
+      })).filter(x=>x.lotNo && x.quantity>0);
 
       if(!employee || !partNo || lots.length===0){ alert('กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity'); return; }
       if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){ alert('Part No. นี้ไม่มีในรายการ'); return; }
 
-      const payload = { token: auth.token, employee, userId, partNo, partName, shift, note, lots };
+      const payload = { token: auth.token, employee, userId, partNo, partName, shift, note, inspectDate, lots };
       const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
       const data = await resp.json();
       if(!data.ok){ alert('Save failed: ' + (data.error||'')); return; }
 
       alert('Saved!');
-      el('partNo').value=''; el('partName').value=''; el('note').value=''; clearLots();
+      el('partNo').value=''; el('partName').value=''; el('note').value='';
+      // คง inspectDate เดิมให้ แต่เซ็ต max วันนี้ทุกครั้ง
+      setDefaultInspectDate();
+      clearLots();
     }catch(err){ alert('Save error: ' + err); }
   }
 
@@ -393,8 +414,17 @@
   }
 
   // ---- Init ----
+  function setDefaultInspectDate(){
+    const t = todayISO();
+    const elDate = el('inspectDate');
+    elDate.max = t;
+    if(!elDate.value) elDate.value = t;
+    // ถ้าอยากให้เลือกอนาคตได้ ให้ลบการตั้งค่า max ออก
+  }
+
   (async function init(){
     applyRoleUI();
+    setDefaultInspectDate();
     const auth = getAuth();
     if(auth && auth.token){
       el('employee').value = auth.username || '';
