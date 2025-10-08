@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Inspection System — MVP</title>
   <style>
-    :root{--bg1:#0b2a55;--bg2:#134b8a;--accent:#1e88e5;--card:#ffffff;--muted:#6b7280;--danger:#c62828}
+    :root{--bg1:#0b2a55;--bg2:#134b8a;--accent:#1e88e5;--card:#ffffff;--muted:#6b7280;--danger:#c62828;--success:#2e7d32}
     *{box-sizing:border-box}
     body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100dvh;color:#0f172a;display:flex;align-items:center;justify-content:center}
     .container{width:min(1100px,95vw);}
@@ -32,6 +32,12 @@
     .login-hero{padding:28px;text-align:center;color:white}
     .login-hero h2{margin:0 0 6px;font-size:clamp(22px,6vw,30px)}
     .lot-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;margin-top:8px}
+    /* Notice */
+    .notice{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:14px;display:none}
+    .notice.show{display:block}
+    .notice.success{background:#e8f5e9;color:var(--success);border:1px solid #c8e6c9}
+    .notice.error{background:#ffebee;color:#b71c1c;border:1px solid #ffcdd2}
+    .saving{opacity:.65;pointer-events:none}
   </style>
 </head>
 <body>
@@ -111,8 +117,9 @@
       </div>
 
       <div class="toolbar">
-        <button class="btn btn-primary" onclick="onSave()">Save</button>
+        <button id="btnSave" type="button" class="btn btn-primary" onclick="onSave()">Save</button>
       </div>
+      <div id="saveNotice" class="notice"></div>
     </section>
 
     <!-- HISTORY -->
@@ -154,6 +161,9 @@
         </div>
         <div><span class="muted" id="dashMeta"></span></div>
       </div>
+
+      <!-- HIGHLIGHTS (All-time) -->
+      <div id="highlights" class="table-wrap" style="margin-top:14px; padding:8px 12px"></div>
 
       <div class="table-wrap" id="tblByPart" style="margin-top:14px"></div>
       <div class="table-wrap" id="tblByEmployee" style="margin-top:14px"></div>
@@ -265,11 +275,38 @@
   function removeLotRow(i){ const row=document.querySelector(`.lot-row[data-index="${i}"]`); if(row) row.remove(); }
   function clearLots(){ el('lotTable').innerHTML=''; lotIndex=0; addLotRow(); }
 
-  // ---- Save ----
+  // ---- Save (frontend-only anti double-submit + notice) ----
   async function onSave(){
+    const btn = el('btnSave');
+    const notice = el('saveNotice');
+
+    // ถ้ากำลัง busy อยู่แล้ว ไม่ให้ยิงซ้ำ
+    if (btn.disabled) return;
+
+    const setNotice = (kind, text) => {
+      notice.className = 'notice ' + (kind ? (kind + ' show') : '');
+      notice.textContent = text || '';
+    };
+    const setBusy = (busy) => {
+      if (busy) {
+        btn.disabled = true;
+        btn.classList.add('saving');
+        btn.dataset.prevText = btn.textContent;
+        btn.textContent = '⏳ Saving...';
+      } else {
+        btn.disabled = false;
+        btn.classList.remove('saving');
+        if (btn.dataset.prevText) btn.textContent = btn.dataset.prevText;
+      }
+    };
+
     try{
+      setNotice('', '');        // ล้างข้อความเก่า
+      setBusy(true);            // feedback ทันที
+
       const auth = getAuth();
-      if(!auth.token){ alert('กรุณา Login ก่อน'); return; }
+      if(!auth.token){ setBusy(false); alert('กรุณา Login ก่อน'); return; }
+
       const employee = el('employee').value.trim();
       const partNo = el('partNo').value.trim();
       const partName = el('partName').value.trim();
@@ -277,31 +314,63 @@
       const note = el('note').value.trim();
       const userId = employee ? employee.toLowerCase().replace(/\s+/g,'') : '';
 
-      // Inspect Date: YYYY-MM-DD
       const today = todayISO();
       const inspectDate = el('inspectDate').value || today;
-      if (inspectDate > today) { alert('ห้ามเลือกวันที่อนาคต'); return; }
+      if (inspectDate > today) { setBusy(false); setNotice('error','ห้ามเลือกวันที่อนาคต'); return; }
 
       const lots = Array.from(document.querySelectorAll('.lot-row')).map(r=>({
         lotNo: r.querySelector('.lot-no').value.trim(),
         quantity: Number(r.querySelector('.lot-qty').value||'0')
       })).filter(x=>x.lotNo && x.quantity>0);
 
-      if(!employee || !partNo || lots.length===0){ alert('กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity'); return; }
-      if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){ alert('Part No. นี้ไม่มีในรายการ'); return; }
+      if(!employee || !partNo || lots.length===0){
+        setBusy(false);
+        setNotice('error','กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
+        return;
+      }
+      if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){
+        setBusy(false);
+        setNotice('error','Part No. นี้ไม่มีในรายการ');
+        return;
+      }
+
+      // ส่งข้อมูล (ตั้ง timeout กันแขวน)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(()=>controller.abort(), 30000);
 
       const payload = { token: auth.token, employee, userId, partNo, partName, shift, note, inspectDate, lots };
-      const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload) });
-      const data = await resp.json();
-      if(!data.ok){ alert('Save failed: ' + (data.error||'')); return; }
+      const resp = await fetch(API_URL, { method:'POST', body: JSON.stringify(payload), signal: controller.signal });
+      clearTimeout(timeoutId);
 
-      alert('Saved!');
+      const data = await resp.json().catch(()=>({ ok:false, error:'Invalid JSON' }));
+      if(!resp.ok || !data.ok){
+        throw new Error(data && data.error ? data.error : `HTTP ${resp.status}`);
+      }
+
+      // สำเร็จ → notice + ปุ่มขึ้น “Saved!” ชั่วคราว
+      btn.textContent = '✅ Saved!';
+      setNotice('success', 'บันทึกสำเร็จแล้ว');
+      // เคลียร์ฟอร์ม
       el('partNo').value=''; el('partName').value=''; el('note').value='';
-      // คง inspectDate เดิมให้ แต่เซ็ต max วันนี้ทุกครั้ง
       setDefaultInspectDate();
       clearLots();
-    }catch(err){ alert('Save error: ' + err); }
+
+      // หน่วงให้ user เห็น แล้วปล่อยปุ่มกลับสภาพเดิม
+      setTimeout(()=>{ setBusy(false); setNotice('', ''); }, 1200);
+
+    }catch(err){
+      console.warn(err);
+      setBusy(false);
+      setNotice('error', 'บันทึกไม่สำเร็จ: ' + (err.message || err));
+    }
   }
+
+  // กัน Enter ยิงซ้ำตอน busy
+  document.addEventListener('keydown', e=>{
+    if(e.key === 'Enter' && el('btnSave') && el('btnSave').disabled){
+      e.preventDefault();
+    }
+  });
 
   // ---- History ----
   function renderHistoryTable(rows){
@@ -378,7 +447,7 @@
     setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
   }
 
-  // ---- Dashboard ----
+  // ---- Dashboard helpers ----
   function renderTable(containerId, title, rows, cols){
     const host=el(containerId);
     if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
@@ -387,6 +456,67 @@
     rows.forEach(r=>{ html+='<tr>'; cols.forEach(c=>{ const v=(c==='Lot No.')?shortIfDate(r[c]):r[c]; const pr=(/qty|records/i.test(c)?'text-align:right':''); html+=`<td style="padding:8px;${pr}">${v??''}</td>`; }); html+='</tr>'; });
     html+='</tbody></table>'; host.innerHTML=html;
   }
+
+  function renderHighlights(dashData, historyRows){
+    const topParts = (dashData.byPart || []).slice(0,5).map(r => ({
+      partNo: r['Part No.'], partName: r['Part Name'], qty: r.Qty
+    }));
+    const topEmp = [...(dashData.byEmployee || [])]
+      .sort((a,b)=> (b.Records||0) - (a.Records||0))
+      .slice(0,5)
+      .map(r => ({ employee: r.Employee, records: r.Records, qty: r.Qty }));
+    const topShift = [...(dashData.byShift || [])]
+      .sort((a,b)=> (b.Records||0) - (a.Records||0))
+      .slice(0,2)
+      .map(r => ({ shift: r.Shift || '(blank)', records: r.Records, qty: r.Qty }));
+    const qtyByInspect = {};
+    (historyRows || []).forEach(r => {
+      const k = String(r['Inspect Date'] || '').trim();
+      const q = Number(r.Quantity || 0);
+      qtyByInspect[k] = (qtyByInspect[k] || 0) + q;
+    });
+    const topInspect = Object.entries(qtyByInspect)
+      .map(([d,q]) => ({ inspectDate: d || '(blank)', qty: q }))
+      .sort((a,b)=> b.qty - a.qty)
+      .slice(0,5);
+
+    const tbl = (title, headers, rows, rowMap) => {
+      let h = `<div class="muted" style="padding:6px 0 4px">${title}</div>`;
+      h += '<table style="width:100%;margin-bottom:10px"><thead><tr>';
+      headers.forEach(th => h += `<th style="text-align:left;padding:8px">${th}</th>`);
+      h += '</tr></thead><tbody>';
+      rows.forEach(r => {
+        const cols = rowMap(r);
+        h += '<tr>' + cols.map((c,i)=>{
+          const align = (typeof c==='number') ? 'text-align:right' : 'text-align:left';
+          return `<td style="padding:6px;${align}">${c ?? ''}</td>`;
+        }).join('') + '</tr>';
+      });
+      h += '</tbody></table>';
+      return h;
+    };
+
+    const html =
+      tbl('① Top 5 Part No. by Qty (All-time)',
+          ['Part No.','Part Name','Qty'],
+          topParts,
+          r => [r.partNo, r.partName, r.qty]) +
+      tbl('② Top 5 Employees by Records (All-time)',
+          ['Employee','Records','Qty'],
+          topEmp,
+          r => [r.employee, r.records, r.qty]) +
+      tbl('③ Top 2 Shifts by Records (All-time)',
+          ['Shift','Records','Qty'],
+          topShift,
+          r => [r.shift, r.records, r.qty]) +
+      tbl('④ Top 5 Inspect Dates by Qty (All-time)',
+          ['Inspect Date','Qty'],
+          topInspect,
+          r => [r.inspectDate, r.qty]);
+
+    document.getElementById('highlights').innerHTML = html;
+  }
+
   async function loadDashboard(){
     try{
       const { token } = getAuth();
@@ -402,6 +532,13 @@
       const resp = await fetch(withBust(API_URL + '?' + q.toString()));
       const data = await resp.json();
       if(!data.ok){ el('dashMeta').textContent='Error'; alert(data.error||'Load failed'); return; }
+
+      const qHist = new URLSearchParams({ action:'history', token, limit:'50000' });
+      const respH = await fetch(withBust(API_URL + '?' + qHist.toString()));
+      const hist  = await respH.json();
+      const rowsHistory = (hist && hist.ok && Array.isArray(hist.rows)) ? hist.rows : [];
+
+      renderHighlights(data, rowsHistory);
 
       renderTable('tblByPart','By Part',data.byPart,['Part No.','Part Name','Records','Qty']);
       renderTable('tblByEmployee','By Employee',data.byEmployee,['Employee','Records','Qty']);
@@ -419,7 +556,6 @@
     const elDate = el('inspectDate');
     elDate.max = t;
     if(!elDate.value) elDate.value = t;
-    // ถ้าอยากให้เลือกอนาคตได้ ให้ลบการตั้งค่า max ออก
   }
 
   (async function init(){
