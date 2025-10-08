@@ -132,16 +132,33 @@
         <div><label>Part No. (filter)</label><input id="hPartNo" list="partNoList" placeholder="พิมพ์บางส่วนได้" /></div>
         <div><label>Employee (filter)</label><input id="hEmployee" placeholder="เช่น Champ" /></div>
       </div>
+
       <div class="toolbar" style="justify-content:space-between">
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button class="btn" onclick="resetHistoryFilters()">Reset</button>
-          <button class="btn btn-primary" onclick="loadHistory()">Search</button>
+          <button id="btnHistorySearch" class="btn btn-primary" onclick="loadHistory()">Search</button>
           <button class="btn btn-ghost" onclick="exportHistoryCSV()">Export CSV</button>
         </div>
         <div><span class="muted" id="historyMeta"></span></div>
       </div>
-      <div style="margin-top:14px"><div id="historyTable" class="table-wrap"></div></div>
-      <div class="toolbar" style="justify-content:flex-end"><button class="btn" onclick="showScreen('screen-form')">Back to Form</button></div>
+
+      <!-- Notice -->
+      <div id="historyNotice" class="muted" style="margin-top:6px;min-height:22px"></div>
+
+      <div id="historyTableWrap" class="table-wrap" style="margin-top:14px; transition:opacity .25s ease;">
+        <div id="historyTable"></div>
+      </div>
+
+      <!-- Pagination -->
+      <div id="historyPager" class="toolbar" style="justify-content:center; gap:8px; display:none">
+        <button id="hPrev" class="btn" onclick="histPrev()">Prev</button>
+        <span class="muted" id="hPageInfo">Page 1/1</span>
+        <button id="hNext" class="btn" onclick="histNext()">Next</button>
+      </div>
+
+      <div class="toolbar" style="justify-content:flex-end">
+        <button class="btn" onclick="showScreen('screen-form')">Back to Form</button>
+      </div>
     </section>
 
     <!-- DASHBOARD -->
@@ -279,8 +296,6 @@
   async function onSave(){
     const btn = el('btnSave');
     const notice = el('saveNotice');
-
-    // ถ้ากำลัง busy อยู่แล้ว ไม่ให้ยิงซ้ำ
     if (btn.disabled) return;
 
     const setNotice = (kind, text) => {
@@ -301,8 +316,7 @@
     };
 
     try{
-      setNotice('', '');        // ล้างข้อความเก่า
-      setBusy(true);            // feedback ทันที
+      setNotice('', ''); setBusy(true);
 
       const auth = getAuth();
       if(!auth.token){ setBusy(false); alert('กรุณา Login ก่อน'); return; }
@@ -324,17 +338,12 @@
       })).filter(x=>x.lotNo && x.quantity>0);
 
       if(!employee || !partNo || lots.length===0){
-        setBusy(false);
-        setNotice('error','กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity');
-        return;
+        setBusy(false); setNotice('error','กรุณากรอก Employee, Part No. และอย่างน้อย 1 แถวของ Lot/Quantity'); return;
       }
       if(!(PARTS[partNo] || PARTS_LC[normalizeKey(partNo)])){
-        setBusy(false);
-        setNotice('error','Part No. นี้ไม่มีในรายการ');
-        return;
+        setBusy(false); setNotice('error','Part No. นี้ไม่มีในรายการ'); return;
       }
 
-      // ส่งข้อมูล (ตั้ง timeout กันแขวน)
       const controller = new AbortController();
       const timeoutId = setTimeout(()=>controller.abort(), 30000);
 
@@ -347,15 +356,12 @@
         throw new Error(data && data.error ? data.error : `HTTP ${resp.status}`);
       }
 
-      // สำเร็จ → notice + ปุ่มขึ้น “Saved!” ชั่วคราว
+      // success
       btn.textContent = '✅ Saved!';
       setNotice('success', 'บันทึกสำเร็จแล้ว');
-      // เคลียร์ฟอร์ม
       el('partNo').value=''; el('partName').value=''; el('note').value='';
       setDefaultInspectDate();
       clearLots();
-
-      // หน่วงให้ user เห็น แล้วปล่อยปุ่มกลับสภาพเดิม
       setTimeout(()=>{ setBusy(false); setNotice('', ''); }, 1200);
 
     }catch(err){
@@ -372,7 +378,11 @@
     }
   });
 
-  // ---- History ----
+  // ---- History (enhanced: Search state + pagination 5 rows + animation) ----
+  const H_PAGE_SIZE = 5;
+  let hRowsAll = [];
+  let hPage = 1;
+
   function renderHistoryTable(rows){
     const host = el('historyTable');
     if(!rows || rows.length===0){ host.innerHTML = '<div class="muted" style="padding:16px">No records</div>'; return; }
@@ -403,7 +413,48 @@
     html += '</tbody></table>';
     host.innerHTML = html;
   }
+
+  function renderHistoryPage(){
+    const total = hRowsAll.length;
+    const totalPages = Math.max(1, Math.ceil(total / H_PAGE_SIZE));
+    hPage = Math.min(Math.max(1, hPage), totalPages);
+
+    const startIdx = (hPage - 1) * H_PAGE_SIZE;
+    const endIdx = Math.min(startIdx + H_PAGE_SIZE, total);
+    const pageRows = hRowsAll.slice(startIdx, endIdx);
+
+    const wrap = el('historyTableWrap');
+    wrap.style.opacity = '0';
+    setTimeout(()=>{
+      renderHistoryTable(pageRows);
+      wrap.style.opacity = '1';
+    }, 150);
+
+    el('historyMeta').textContent =
+      total === 0
+        ? 'No data'
+        : `Total: ${total} | Page ${hPage}/${totalPages} | Showing: ${endIdx - startIdx}`;
+
+    const pager = el('historyPager');
+    pager.style.display = total > 0 ? 'flex' : 'none';
+    el('hPrev').disabled = hPage <= 1;
+    el('hNext').disabled = hPage >= totalPages;
+    el('hPageInfo').textContent = `Page ${hPage}/${totalPages}`;
+  }
+  function histPrev(){ hPage--; renderHistoryPage(); }
+  function histNext(){ hPage++; renderHistoryPage(); }
+
   async function loadHistory(){
+    const btn = el('btnHistorySearch');
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const oldText = btn.textContent;
+    btn.textContent = '🔍 Searching...';
+    el('historyNotice').textContent = 'กำลังโหลดข้อมูล...';
+    el('historyTable').innerHTML = '';
+    el('historyTableWrap').style.opacity = '0.6';
+    el('historyPager').style.display = 'none';
+
     try{
       const { token } = getAuth();
       if(!token){ alert('ต้อง Login ก่อน'); return; }
@@ -418,12 +469,48 @@
       });
       const resp = await fetch(withBust(API_URL + '?' + q.toString()));
       const data = await resp.json();
-      if(!data.ok){ el('historyMeta').textContent='Error'; alert(data.error||'Load failed'); return; }
-      el('historyMeta').textContent = `Total: ${data.total} | Showing: ${data.rows.length}`;
-      renderHistoryTable(data.rows);
-      loadHistory._rows = data.rows;
-    }catch(err){ alert('Load error: ' + err); }
+
+      if(!data.ok){
+        el('historyMeta').textContent = 'Error';
+        el('historyNotice').textContent = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+        hRowsAll = []; hPage = 1; renderHistoryPage();
+        return;
+      }
+
+      hRowsAll = Array.isArray(data.rows) ? data.rows : [];
+      hPage = 1;
+      loadHistory._rows = hRowsAll;
+      renderHistoryPage();
+
+      if(hRowsAll.length === 0){
+        el('historyNotice').textContent = 'ไม่พบข้อมูลตามเงื่อนไขที่ค้นหา';
+      }else{
+        el('historyNotice').textContent = `พบข้อมูลทั้งหมด ${hRowsAll.length} รายการ`;
+      }
+    }catch(err){
+      el('historyNotice').textContent = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+      alert('Load error: ' + err);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = oldText;
+      el('historyTableWrap').style.opacity = '1';
+    }
   }
+
+  async function exportHistoryCSV(){
+    if(!loadHistory._rows || loadHistory._rows.length === 0){
+      alert('กรุณากด Search ก่อนส่งออก');
+      return;
+    }
+    const rows = loadHistory._rows;
+    const start = el('hStart').value ? fmtShortDMY(el('hStart').value) : 'all';
+    const end   = el('hEnd').value ? fmtShortDMY(el('hEnd').value) : 'all';
+    const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
+  }
+
   function toCSVShortDate(rows){
     if(!rows || rows.length===0) return '';
     const headers = ['Date','Employee','Part No.','Part Name','Lot No.','Quantity','Shift','Note'];
@@ -435,19 +522,8 @@
     }
     return '\uFEFF' + lines.join('\r\n');
   }
-  async function exportHistoryCSV(){
-    if(!loadHistory._rows) await loadHistory();
-    const rows = loadHistory._rows || [];
-    if(rows.length===0){ alert('ไม่มีข้อมูลให้ส่งออก'); return; }
-    const start = el('hStart').value ? fmtShortDMY(el('hStart').value) : 'all';
-    const end   = el('hEnd').value ? fmtShortDMY(el('hEnd').value) : 'all';
-    const blob = new Blob([toCSVShortDate(rows)], {type:'text/csv;charset=utf-8;'});
-    const url = URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`inspection_history_${start}_to_${end}.csv`; document.body.appendChild(a); a.click();
-    setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},0);
-  }
 
-  // ---- Dashboard helpers ----
+  // ---- Dashboard helpers & highlights ----
   function renderTable(containerId, title, rows, cols){
     const host=el(containerId);
     if(!rows || rows.length===0){ host.innerHTML=`<div class="muted" style="padding:12px">${title}: No data</div>`; return; }
